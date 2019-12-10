@@ -3,6 +3,8 @@ rm(list=ls())
 #library(data.table)
 library(openxlsx)
 library(tidyr)
+fftdatapath <- file.path(".", "data", "rawdata", "fft")
+
 ####number of plots in [9,5] from the summarty table######
 ####creating count table##########
 ##################################
@@ -34,10 +36,15 @@ CreaCounTable<-function(xlsxfile){
 
 
 ####creating ht-age table########
-FFT_93G_045_568<-read.xlsx("C:/data/FFTmpb/93G_045_568_MPB_Recce_Survey_Strat2.xlsx")
+
+FFT_93G_045_568<-read.xlsx(file.path(fftdatapath, "93G_045_568_MPB_Recce_Survey_Strat2.xlsx"))
+
 hatable<-NULL
 for (i in 1:FFT_93G_045_568[9,5]){
-  tmp <- read.xlsx("C:/data/FFTmpb/93G_045_568_MPB_Recce_Survey_Strat2.xlsx",sheet=as.character(i),colNames = FALSE,detectDates = TRUE)
+  tmp <- read.xlsx(file.path(fftdatapath, "93G_045_568_MPB_Recce_Survey_Strat2.xlsx"),
+                   sheet=as.character(i),
+                   colNames = FALSE,
+                   detectDates = TRUE)
   test<-tmp[12:18,1:8]
   names(test)<-as.character(test[1,])
   test<-test[-1,]
