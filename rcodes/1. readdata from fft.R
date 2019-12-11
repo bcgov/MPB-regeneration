@@ -1,12 +1,51 @@
 #####read FFT data########
+
 rm(list=ls())
 #library(data.table)
 library(openxlsx)
 library(tidyr)
 fftdatapath <- file.path(".", "data", "rawdata", "fft")
 
-####number of plots in [9,5] from the summarty table######
-####FUNCTION for creating count table#####################
+####Summarise tables from all avaliable fft files########
+####Extract and rashape tables from FFT survey data: 1. count table; 2. Ht-Age table; 3. BAF count table; 4. Forest health table
+####1.count table
+
+FFT_counTable_All<-NULL
+file_list<-list.files(fftdatapath)
+for (i in 1:length(file_list)){
+  tmp_data<-CreaCounTable(file_list[i])
+  counTable_All<-rbind(counTable_All,tmp_data)
+}
+
+####2. Ht-Age table
+
+FFT_HtAgeTable_All<-NULL
+file_list<-list.files(fftdatapath)
+for (i in 1:length(file_list)){
+  tmp_data<-CreaHATable(file_list[i])
+  HtAgeTable_All<-rbind(HtAgeTable_All,tmp_data)
+}
+
+####3. BAF count table
+
+FFT_BafTable_All<-NULL
+file_list<-list.files(fftdatapath)
+for (i in 1:length(file_list)){
+  tmp_data<-CreaBafTable(file_list[i])
+  FFT_BafTable_All<-rbind(FFT_BafTable_All,tmp_data)
+}
+
+####4. Forest health table
+
+FFT_HealTable_All<-NULL
+file_list<-list.files(fftdatapath)
+for (i in 1:length(file_list)){
+  tmp_data<-CreaCounTable(file_list[i])
+  FFT_HealTable_All<-rbind(FFT_HealTable_All,tmp_data)
+}
+
+####FUNCTIONS################################################
+####1. FUNCTION for creating count table#####################
 
 CreaCounTable<-function(fftfile){
   xlsxfile<-file.path(fftdatapath,fftfile)
@@ -46,7 +85,7 @@ CreaCounTable<-function(fftfile){
 }
 
 
-####FUNCTION for creating ht-age table################
+####2.FUNCTION for creating ht-age table################
 
 CreaHATable<-function(fftfile){
   xlsxfile<-file.path(fftdatapath, fftfile)
@@ -91,7 +130,7 @@ CreaHATable<-function(fftfile){
   return(hatable)
 }
 
-####Create BAF count table#########################
+####3.FUNCTION for creating BAF count table#########################
 
 CreaBafTable<-function(fftfile){
   xlsxfile<-file.path(fftdatapath, fftfile)
@@ -134,35 +173,70 @@ CreaBafTable<-function(fftfile){
   return(baftable)
 }
 
+####4.FUNCTION for Forest Health table###########################
 
+CreaHealTable<-function(fftfile){
+  xlsxfile<-file.path(fftdatapath, fftfile)
+  sumtable<-read.xlsx(xlsxfile)
+  healtable<-NULL
+  for (i in 1:sumtable[9,5]){
+    tmp <- read.xlsx(xlsxfile,
+                     sheet=as.character(i),
+                     colNames = FALSE,
+                     detectDates = TRUE)
+    test<-tmp[3:26,9:12]
+    names(test)<-as.character(test[1,])
+    test<-test[-1,]
+    test<-test[!apply(is.na(test),1,all),]
+    if (dim(test)[1]!="0"){
+      test1<-reshape(test,
+                     varying = 3:4,
+                     v.names = "count",
+                     times=names(test)[3:4],
+                     direction="long") #reshape to long table##
+      test1<-subset(test1,select = -id)
+      row.names(test1)<-NULL
+      test1<-test1[!apply(is.na(test1),1,any),]
+      names(test1)[3]<-"Status"
+      openingid<-tmp[1,3] #add opening id
+      plotid<-tmp[1,9] #add plot id
+      date<-tmp[1,11] #add measure date
+      test2<-cbind(openingid,date,plotid,test1)
+    }else{
+      test2<-NULL
+    }
+    healtable<-rbind(healtable,test2)
+  }
+  row.names(healtable)<-NULL
+  return(healtable)
+}
 
 ######TEST RUN for one opening and one plot#######
 FFT_93G_045_568<-read.xlsx(file.path(fftdatapath, "93G_045_568_MPB_Recce_Survey_Strat2.xlsx"))
 for (i in 1:FFT_93G_045_568[9,5]){
-  i<-6
+  i<-1
   tmp <- read.xlsx(file.path(fftdatapath, "93G_045_568_MPB_Recce_Survey_Strat2.xlsx"),
                    sheet=as.character(i),
                    colNames = FALSE,
                    detectDates = TRUE)
 }
-test<-tmp[19:20,1:8]
+test<-tmp[3:26,9:12]
 names(test)<-as.character(test[1,])
-names(test)[1]<-"BAF"
 test<-test[-1,]
-test[is.na(test$BAF),"BAF"]<-"5"
-test<-test[,!apply(is.na(test),2,all)] #remove na columns
-test1<-reshape(test,varying = 2:dim(test)[2],v.names = "count",times=names(test)[2:dim(test)[2]],direction="long") #reshape to long table##
-test2<-separate(test1,
-                col = "time",
-                into = c("SPP","Layer"),
-                sep = " ",
-                fill = "left")
-test2<-subset(test2,select = -id)
-row.names(test2)<-NULL
+test<-test[!apply(is.na(test),1,all),]
+test1<-reshape(test,
+               varying = 3:4,
+               v.names = "count",
+               times=names(test)[3:4],
+               direction="long") #reshape to long table##
+test1<-subset(test1,select = -id)
+row.names(test1)<-NULL
+test1<-test1[!apply(is.na(test1),1,any),]
+names(test1)[3]<-"Status"
 openingid<-tmp[1,3] #add opening id
 plotid<-tmp[1,9] #add plot id
 date<-tmp[1,11] #add measure date
-test3<-cbind(openingid,date,plotid,test2)
+test2<-cbind(openingid,date,plotid,test1)
 
 ###save for later memo#####
 FFT_93J_073_077<-read.xlsx(file.path(fftdatapath, "93J_073_077_2018_MPB_Recce_Summary.xlsx"))
