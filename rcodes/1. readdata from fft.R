@@ -30,6 +30,7 @@ for (i in 1:length(file_list)){
                                   Area_ha = reportTable[8,5],
                                   plot_Number = reportTable[9,5],
                                   BEC = reportTable[8,10],
+                                  SI = reportTable[22,18],
                                   Mortality = reportTable[57,3]))
   opening_tmp$Lat<-gsub(" ","",opening_tmp$Lat)
   opening_tmp$Lat<-gsub("º","°",opening_tmp$Lat)
@@ -38,6 +39,7 @@ for (i in 1:length(file_list)){
   opening_tmp$Area_ha <- as.numeric(gsub(" ha", "", opening_tmp$Area_ha))
   opening_tmp$Plot_size_m2 <- as.numeric(gsub("m2","",opening_tmp$Plot_size_m2))
   opening_tmp$plot_Number <- as.numeric(opening_tmp$plot_Number)
+  opening_tmp$SI <- round(as.numeric(opening_tmp$SI),digits = 0)
   opening_tmp$Mortality <- round(as.numeric(opening_tmp$Mortality),digits = 2)
   Opening_Info<- rbind(Opening_Info,opening_tmp)
 
@@ -219,8 +221,8 @@ CreaHealTable<-function(indiplotdata){
 for (i in file_list){
   i<-file_list[1]
   tmp <- read.xlsx(i,
-                   sheet=as.character(i),
-                   colNames = FALSE,
+                   sheet="Report",
+                   colNames = TRUE,
                    detectDates = TRUE)
 }
 
