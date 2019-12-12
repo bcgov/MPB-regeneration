@@ -9,206 +9,188 @@ fftdatapath <- file.path(".", "data", "rawdata", "fft")
 ####Summarise tables from all avaliable fft files########
 ####Extract and rashape tables from FFT survey data: 1. count table; 2. Ht-Age table; 3. BAF count table; 4. Forest health table
 ####1.count table
+file_list <- dir(fftdatapath, full.names = TRUE)
 
-FFT_counTable_All<-NULL
-file_list<-list.files(fftdatapath)
-for (i in 1:length(file_list)){
-  tmp_data<-CreaCounTable(file_list[i])
-  counTable_All<-rbind(counTable_All,tmp_data)
+counTable_All <- NULL
+HtAgeTable_All <- NULL
+BafTable_All <- NULL
+HealTable_All <- NULL
+for (indifile in file_list){
+  indifile <- file_list[1]
+  reportTable <- read.xlsx(indifile,
+                           sheet = "Report") #extract the summary table of this opening
+
+  NoPlot <- reportTable[9, 5]
+
+  for (indiplot in 1:NoPlot) {
+    indiplotdata <- read.xlsx(indifile,
+                              sheet = as.character(indiplot),
+                              colNames = FALSE,
+                              detectDates = TRUE) #extract the table for each plot
+
+    ## extract count table
+    tmp_countdata <- CreaCounTable(indiplotdata)
+    counTable_All <- rbind(counTable_All,tmp_countdata)
+
+    ####2. Ht-Age table
+    tmp_htagedata <- CreaHATable(indiplotdata)
+    HtAgeTable_All <- rbind(HtAgeTable_All, tmp_htagedata)
+
+    ####3. BAF count table
+    tmp_bafdata <- CreaBafTable(indiplotdata)
+    BafTable_All <- rbind(BafTable_All, tmp_bafdata)
+
+    ####4. Forest health table
+    tmp_helthdata <- CreaCounTable(indiplotdata)
+    HealTable_All <- rbind(HealTable_All, tmp_helthdata)
+
+    rm(tmp_countdata, tmp_helthdata, tmp_bafdata, tmp_htagedata)
+  }
+
 }
 
-####2. Ht-Age table
 
-FFT_HtAgeTable_All<-NULL
-file_list<-list.files(fftdatapath)
-for (i in 1:length(file_list)){
-  tmp_data<-CreaHATable(file_list[i])
-  HtAgeTable_All<-rbind(HtAgeTable_All,tmp_data)
-}
-
-####3. BAF count table
-
-FFT_BafTable_All<-NULL
-file_list<-list.files(fftdatapath)
-for (i in 1:length(file_list)){
-  tmp_data<-CreaBafTable(file_list[i])
-  FFT_BafTable_All<-rbind(FFT_BafTable_All,tmp_data)
-}
-
-####4. Forest health table
-
-FFT_HealTable_All<-NULL
-file_list<-list.files(fftdatapath)
-for (i in 1:length(file_list)){
-  tmp_data<-CreaCounTable(file_list[i])
-  FFT_HealTable_All<-rbind(FFT_HealTable_All,tmp_data)
-}
 
 ####FUNCTIONS################################################
 ####1. FUNCTION for creating count table#####################
 
-CreaCounTable<-function(fftfile){
-  xlsxfile<-file.path(fftdatapath,fftfile)
-  sumtable<-read.xlsx(xlsxfile) #extract the summary table of this opening
-  counttable<-NULL
-  for (i in 1:sumtable[9,5]){
-    tmp <- read.xlsx(xlsxfile,
-                     sheet=as.character(i),
-                     colNames = FALSE,
-                     detectDates = TRUE) #extract the table for each plot
-    test<-tmp[2:11,1:8] #extract the count table from the measure table
-    names(test)<-as.character(test[1,]) #set the column names to be the first row of count table
-    test<-test[-1,] #remove first row as it is now the column names
-    test<-test[,!apply(is.na(test),2,all)] #remove na columns
-    test1<-reshape(test,
-                   varying = 2:dim(test)[2],
-                   v.names = "number",
-                   times=names(test)[2:dim(test)[2]],
-                   direction="long") #reshape the count table to long table
-    row.names(test1)<-NULL #set NUll to row names
-    test1<-subset(test1,select = -id) #remove unnecessary id column, which is creating from "reshape" step
-    test2<-separate(test1,
-                    col = "Spp",
-                    into = c("Layer","Status"),
-                    sep = " ") #split the old "Layer (Status)" data in "Spp" to two new columns called "Layer" and "Status"
-    test2$Status<-rep(c("T","W","F"),dim(test2)[1]/3) #remove brackets in "Status" column
-    names(test2)<-c("Layer","Status","SPP","Count") #rename the columns
-    openingid<-tmp[1,3] #add opening id
-    plotid<-tmp[1,9] #add plot id
-    date<-tmp[1,11] #add measure date
-    test3<-cbind(openingid,date,plotid,test2)
-    test4<-test3[!apply(is.na(test3),1,any),] #remove rows that contain na
-    counttable<- rbind(counttable, test4) #bind the reshaped count table for each plot together
-  }
-  row.names(counttable)<-NULL
-  return(counttable)
+CreaCounTable <- function(plotdata_raw){
+  plotdata_raw <- indiplotdata
+  test <- plotdata_raw[2:11,1:8] #extract the count table from the measure table
+  names(test) <- as.character(test[1,]) #set the column names to be the first row of count table
+  test <- test[-1,] #remove first row as it is now the column names
+  test <- test[,!apply(is.na(test),2,all)] #remove na columns
+  test1 <- reshape(test,
+                 varying = 2:dim(test)[2],
+                 v.names = "Count",
+                 times=names(test)[2:dim(test)[2]],
+                 timevar = "Species",
+                 direction="long") #reshape the count table to long table
+  test1 <- subset(test1,select = -id) #remove unnecessary id column, which is creating from "reshape" step
+
+  ## before clean this column, it would be better to remove any space between letters
+  test1$Spp <- gsub(" ", "", test1$Spp)
+  test2 <- separate(test1,
+                   col = "Spp",
+                   into = c("Layer","Status"),
+                   sep = "\\(") #split the old "Layer (Status)" data in "Spp" to two new columns called "Layer" and "Status"
+                              # it is a little risky for using " " to seperate, as it is easy to
+                              # have a space between letters by accident
+                              # I would suggest using "("
+
+  ## this is assigning, rather than removing ()
+  # test2$Status <- rep(c("T","W","F"),dim(test2)[1]/3) #remove brackets in "Status" column
+
+  ## after using "(" to seperate, all we need to do is to remove ")"
+  test2$Status <- gsub("\\)", "", test2$Status)
+
+  test3 <- cbind(openingid = plotdata_raw[1,3],
+                 date = plotdata_raw[1,11],
+                 plotid = plotdata_raw[1,9],
+                 test2)
+  test4 <- test3[!apply(is.na(test3),1,any),] #remove rows that contain na
+  row.names(test4)<-NULL
+  return(test4)
 }
 
+## do the cleanup for the below functions
 
 ####2.FUNCTION for creating ht-age table################
 
-CreaHATable<-function(fftfile){
-  xlsxfile<-file.path(fftdatapath, fftfile)
-  sumtable<-read.xlsx(xlsxfile)
-  hatable<-NULL
-  for (i in 1:sumtable[9,5]){
-    tmp <- read.xlsx(xlsxfile,
-                     sheet=as.character(i),
-                     colNames = FALSE,
-                     detectDates = TRUE) #extract the table for each plot
-    test<-tmp[12:18,1:8] #extract the ht-age table from the measure table
-    names(test)<-as.character(test[1,])
-    test<-test[-1,]
-    test<-test[,!apply(is.na(test),2,all)] #remove na columns
-      if (is.data.frame((test))){
-        names(test)[1]<-"Attributes"  #replace NA to "Attributes" for first column's name
-        test1<-separate(test,
-                        col = "Attributes",
-                        into = c("Layer","Attribute"),
-                        sep = " ") #seperate layer and attributes
-        test1<-reshape(test1,
-                       varying = 3:dim(test1)[2],
-                       v.names = "number",
-                       times=names(test1)[3:dim(test1)[2]],
-                       direction="long") #reshape to long table##
-        sub_Ht<-test1[test1$Attribute=="Ht",]
-        sub_Age<-test1[test1$Attribute=="Age",]
-        test2<-merge(sub_Ht,sub_Age,by = c("Layer","time"),suffixes = c("Ht","Age"))
-        test3<-subset(test2,select = c(Layer,time,numberHt,numberAge))
-        names(test3)<-c("Layer","SPP","Ht","Age")
-        test4<-test3[!apply(is.na(test3),1,any),]
-        openingid<-tmp[1,3] #add opening id
-        plotid<-tmp[1,9] #add plot id
-        date<-tmp[1,11] #add measure date
-        test5<-cbind(openingid,date,plotid,test4)
-      }else{
-        test5<-NULL
-      }
-    hatable<-rbind(hatable,test5)
-}
-  row.names(hatable)<-NULL
-  return(hatable)
+CreaHATable<-function(plotdata_raw){
+
+  test<-plotdata_raw[12:18,1:8] #extract the ht-age table from the measure table
+  names(test)<-as.character(test[1,])
+  test<-test[-1,]
+  test<-test[,!apply(is.na(test),2,all)] #remove na columns
+  if (is.data.frame((test))){
+    names(test)[1]<-"Attributes"  #replace NA to "Attributes" for first column's name
+    test1<-separate(test,
+                    col = "Attributes",
+                    into = c("Layer","Attribute"),
+                    sep = " ") #seperate layer and attributes
+    test1<-reshape(test1,
+                   varying = 3:dim(test1)[2],
+                   v.names = "number",
+                   times=names(test1)[3:dim(test1)[2]],
+                   direction="long") #reshape to long table##
+    sub_Ht<-test1[test1$Attribute=="Ht",]
+    sub_Age<-test1[test1$Attribute=="Age",]
+    test2<-merge(sub_Ht,sub_Age,by = c("Layer","time"),suffixes = c("Ht","Age"))
+    test3<-subset(test2,select = c(Layer,time,numberHt,numberAge))
+    names(test3)<-c("Layer","SPP","Ht","Age")
+    test4<-test3[!apply(is.na(test3),1,any),]
+    openingid<-plotdata_raw[1,3] #add opening id
+    plotid<-plotdata_raw[1,9] #add plot id
+    date<-plotdata_raw[1,11] #add measure date
+    test5<-cbind(openingid,date,plotid,test4)
+  }else{
+    test5<-NULL
+  }
+  row.names(test5)<-NULL
+  return(test5)
 }
 
 ####3.FUNCTION for creating BAF count table#########################
 
-CreaBafTable<-function(fftfile){
-  xlsxfile<-file.path(fftdatapath, fftfile)
-  sumtable<-read.xlsx(xlsxfile)
-  baftable<-NULL
-  for (i in 1:sumtable[9,5]){
-    tmp <- read.xlsx(xlsxfile,
-                     sheet=as.character(i),
-                     colNames = FALSE,
-                     detectDates = TRUE)
-    test<-tmp[19:20,1:8]
-    names(test)<-as.character(test[1,])
-    names(test)[1]<-"BAF"
-    test<-test[-1,]
-    test[is.na(test$BAF),"BAF"]<-"5"
-    test<-test[,!apply(is.na(test),2,all)]
-    if (is.data.frame(test)){
-      test1<-reshape(test,
-                     varying = 2:dim(test)[2],
-                     v.names = "count",
-                     times=names(test)[2:dim(test)[2]],
-                     direction="long") #reshape to long table##
-      test2<-separate(test1,
-                      col = "time",
-                      into = c("SPP","Layer"),
-                      sep = " ",
-                      fill = "left")
-      test2<-subset(test2,select = -id)
-      row.names(test2)<-NULL
-      openingid<-tmp[1,3] #add opening id
-      plotid<-tmp[1,9] #add plot id
-      date<-tmp[1,11] #add measure date
-      test3<-cbind(openingid,date,plotid,test2)
-    }else{
-      test3<-NULL
-    }
-    baftable<-rbind(baftable,test3)
+CreaBafTable<-function(plotdata_raw){
+
+  test<-plotdata_raw[19:20,1:8]
+  names(test)<-as.character(test[1,])
+  names(test)[1]<-"BAF"
+  test<-test[-1,]
+  test[is.na(test$BAF),"BAF"]<-"5"
+  test<-test[,!apply(is.na(test),2,all)]
+  if (is.data.frame(test)){
+    test1<-reshape(test,
+                   varying = 2:dim(test)[2],
+                   v.names = "count",
+                   times=names(test)[2:dim(test)[2]],
+                   direction="long") #reshape to long table##
+    test2<-separate(test1,
+                    col = "time",
+                    into = c("SPP","Layer"),
+                    sep = " ",
+                    fill = "left")
+    test2<-subset(test2,select = -id)
+    row.names(test2)<-NULL
+    openingid<-plotdata_raw[1,3] #add opening id
+    plotid<-plotdata_raw[1,9] #add plot id
+    date<-plotdata_raw[1,11] #add measure date
+    test3<-cbind(openingid,date,plotid,test2)
+  }else{
+    test3<-NULL
   }
-  row.names(baftable)<-NULL
-  return(baftable)
+  row.names(test3)<-NULL
+  return(test3)
 }
 
 ####4.FUNCTION for Forest Health table###########################
 
 CreaHealTable<-function(fftfile){
-  xlsxfile<-file.path(fftdatapath, fftfile)
-  sumtable<-read.xlsx(xlsxfile)
-  healtable<-NULL
-  for (i in 1:sumtable[9,5]){
-    tmp <- read.xlsx(xlsxfile,
-                     sheet=as.character(i),
-                     colNames = FALSE,
-                     detectDates = TRUE)
-    test<-tmp[3:26,9:12]
-    names(test)<-as.character(test[1,])
-    test<-test[-1,]
-    test<-test[!apply(is.na(test),1,all),]
-    if (dim(test)[1]!="0"){
-      test1<-reshape(test,
-                     varying = 3:4,
-                     v.names = "count",
-                     times=names(test)[3:4],
-                     direction="long") #reshape to long table##
-      test1<-subset(test1,select = -id)
-      row.names(test1)<-NULL
-      test1<-test1[!apply(is.na(test1),1,any),]
-      names(test1)[3]<-"Status"
-      openingid<-tmp[1,3] #add opening id
-      plotid<-tmp[1,9] #add plot id
-      date<-tmp[1,11] #add measure date
-      test2<-cbind(openingid,date,plotid,test1)
-    }else{
-      test2<-NULL
-    }
-    healtable<-rbind(healtable,test2)
+  test<-tmp[3:26,9:12]
+  names(test)<-as.character(test[1,])
+  test<-test[-1,]
+  test<-test[!apply(is.na(test),1,all),]
+  if (dim(test)[1]!="0"){
+    test1<-reshape(test,
+                   varying = 3:4,
+                   v.names = "count",
+                   times=names(test)[3:4],
+                   direction="long") #reshape to long table##
+    test1<-subset(test1,select = -id)
+    row.names(test1)<-NULL
+    test1<-test1[!apply(is.na(test1),1,any),]
+    names(test1)[3]<-"Status"
+    openingid<-tmp[1,3] #add opening id
+    plotid<-tmp[1,9] #add plot id
+    date<-tmp[1,11] #add measure date
+    test2<-cbind(openingid,date,plotid,test1)
+  }else{
+    test2<-NULL
   }
-  row.names(healtable)<-NULL
-  return(healtable)
+  row.names(test2)<-NULL
+  return(test2)
 }
 
 ######TEST RUN for one opening and one plot#######
