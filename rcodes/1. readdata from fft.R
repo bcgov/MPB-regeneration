@@ -4,6 +4,7 @@ rm(list=ls())
 #library(data.table)
 library(openxlsx)
 library(tidyr)
+options(stringsAsFactors = FALSE)
 fftdatapath <- file.path(".", "data", "rawdata", "fft")
 file_list <- dir(fftdatapath, full.names = TRUE)
 
@@ -20,7 +21,7 @@ for (i in 1:length(file_list)){
   reportTable <- read.xlsx(indifile,
                            sheet = "Report",
                            detectDates = TRUE) #extract the summary table of this opening
-  opening_tmp<-as.data.frame(cbind(Opening = reportTable[1,5],
+  opening_tmp<-data.frame(cbind(Opening = reportTable[1,5],
                                    Openingid = reportTable[2,5],
                                   Date = reportTable[1,10],
                                   Lat = reportTable[3,16],
@@ -30,10 +31,14 @@ for (i in 1:length(file_list)){
                                   plot_Number = reportTable[9,5],
                                   BEC = reportTable[8,10],
                                   Mortality = reportTable[57,3]))
+  opening_tmp$Lat<-gsub(" ","",opening_tmp$Lat)
+  opening_tmp$Lat<-gsub("º","°",opening_tmp$Lat)
+  opening_tmp$Long<-gsub(" ","",opening_tmp$Long)
+  opening_tmp$Long<-gsub("º","°",opening_tmp$Long)
   opening_tmp$Area_ha <- as.numeric(gsub(" ha", "", opening_tmp$Area_ha))
   opening_tmp$Plot_size_m2 <- as.numeric(gsub("m2","",opening_tmp$Plot_size_m2))
-  opening_tmp$plot_Number <- as.numeric(as.character(opening_tmp$plot_Number))
-  opening_tmp$Mortality <- round(as.numeric(as.character(opening_tmp$Mortality)),digits = 2)
+  opening_tmp$plot_Number <- as.numeric(opening_tmp$plot_Number)
+  opening_tmp$Mortality <- round(as.numeric(opening_tmp$Mortality),digits = 2)
   Opening_Info<- rbind(Opening_Info,opening_tmp)
 
   NoPlot <- reportTable[9, 5]
