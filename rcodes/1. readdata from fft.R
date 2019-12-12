@@ -211,34 +211,14 @@ CreaHealTable<-function(indiplotdata){
 ##################################################
 ######TEST RUN for one opening and one plot#######
 ##################################################
-FFT_93G_045_568<-read.xlsx(file.path(fftdatapath, "93G_045_568_MPB_Recce_Survey_Strat2.xlsx"))
-for (i in 1:FFT_93G_045_568[9,5]){
-  i<-1
-  tmp <- read.xlsx(file.path(fftdatapath, "93G_045_568_MPB_Recce_Survey_Strat2.xlsx"),
+for (i in file_list){
+  i<-file_list[1]
+  tmp <- read.xlsx(i,
                    sheet=as.character(i),
                    colNames = FALSE,
                    detectDates = TRUE)
 }
-test<-tmp[3:26,9:12]
-names(test)<-as.character(test[1,])
-test<-test[-1,]
-test<-test[!apply(is.na(test),1,all),]
-test1<-reshape(test,
-               varying = 3:4,
-               v.names = "count",
-               times=names(test)[3:4],
-               direction="long") #reshape to long table##
-test1<-subset(test1,select = -id)
-row.names(test1)<-NULL
-test1<-test1[!apply(is.na(test1),1,any),]
-names(test1)[3]<-"Status"
-openingid<-tmp[1,3] #add opening id
-plotid<-tmp[1,9] #add plot id
-date<-tmp[1,11] #add measure date
-test2<-cbind(openingid,date,plotid,test1)
 
-###save for later memo#####
-FFT_93J_073_077<-read.xlsx(file.path(fftdatapath, "93J_073_077_2018_MPB_Recce_Summary.xlsx"))
 
 
 
