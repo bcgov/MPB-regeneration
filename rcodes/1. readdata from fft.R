@@ -9,11 +9,18 @@ fftdatapath <- file.path(".", "data", "rawdata", "fft")
 file_list <- dir(fftdatapath, full.names = TRUE)
 
 ####Summarise tables from all avaliable fft files########
-####Extract and rashape tables from FFT survey data: 1. count table; 2. Ht-Age table; 3. BAF count table; 4. Forest health table
+####Extract and rashape tables from FFT survey data:
+#1. opening information -- Opening_Info;
+#2. count table -- CounTable_T / CounTable_Silvi;
+#3. ht-age table -- HtAgeTable_T / HtAgeTable_Silvi;
+#4. baf table -- BafTable_All;
+#5. forest health table -- HealTable_All
 
 Opening_Info <- NULL
-CounTable_All <- NULL
-HtAgeTable_All <- NULL
+CounTable_T <- NULL
+CounTable_Silvi <- NULL
+HtAgeTable_T <- NULL
+HtAgeTable_Silvi <- NULL
 BafTable_All <- NULL
 HealTable_All <- NULL
 for (i in 1:length(file_list)){
@@ -21,6 +28,7 @@ for (i in 1:length(file_list)){
   reportTable <- read.xlsx(indifile,
                            sheet = "Report",
                            detectDates = TRUE) #extract the summary table of this opening
+  ####extract opening information###
   opening_tmp<-data.frame(cbind(Opening = reportTable[1,5],
                                    Openingid = reportTable[2,5],
                                   Date = reportTable[1,10],
@@ -42,7 +50,21 @@ for (i in 1:length(file_list)){
   opening_tmp$SI <- round(as.numeric(opening_tmp$SI),digits = 0)
   opening_tmp$Mortality <- round(as.numeric(opening_tmp$Mortality),digits = 2)
   Opening_Info<- rbind(Opening_Info,opening_tmp)
+  ####extract ht and age
+  over<-reportTable[22,6]
+  htage_over<-CreaHATable(over)
+  OVER<-data.frame(Opening = reportTable[1,5],
+                   Layer = "L1/L2",
+                   htage_over)
+  under<-reportTable[23,6]
+  htage_under<-CreaHATable(under)
+  UNDER<-data.frame(Opening = reportTable[1,5],
+                    Layer = "L3/L4",
+                    htage_under)
+  htage_all<-rbind(OVER,UNDER)
+  HtAgeTable_T<-rbind(HtAgeTable_T,htage_all)
 
+  ####extract 1. count table 2. silvi ht-age table 3. baf table 4. forest health table
   NoPlot <- reportTable[9, 5]
   for (indiplot in 1:NoPlot) {
     indiplotdata <- read.xlsx(indifile,
@@ -52,11 +74,12 @@ for (i in 1:length(file_list)){
 
     ## extract count table
     tmp_countdata <- CreaCounTable(indiplotdata)
-    CounTable_All <- rbind(CounTable_All,tmp_countdata)
+    CounTable_T <- rbind(CounTable_T,tmp_countdata[tmp_countdata$Status=="T",])
+    CounTable_Silvi <- rbind(CounTable_Silvi,tmp_countdata[tmp_countdata$Status!="T",])
 
-    ####2. Ht-Age table
-    tmp_htagedata <- CreaHATable(indiplotdata)
-    HtAgeTable_All <- rbind(HtAgeTable_All, tmp_htagedata)
+    ####2. Silvi Ht-Age table
+    tmp_htagedata <- CreaHATable_Silvi(indiplotdata)
+    HtAgeTable_Silvi <- rbind(HtAgeTable_Silvi, tmp_htagedata)
 
     ####3. BAF count table
     tmp_bafdata <- CreaBafTable(indiplotdata)
@@ -67,10 +90,10 @@ for (i in 1:length(file_list)){
     HealTable_All <- rbind(HealTable_All, tmp_helthdata)
 
   }
-  rm(tmp_countdata, tmp_helthdata, tmp_bafdata, tmp_htagedata, opening_tmp)
+  rm(tmp_countdata, tmp_helthdata, tmp_bafdata, tmp_htagedata, opening_tmp,over,OVER,under,UNDER,htage_over,htage_under,htage_all)
 }
 
-
+#############################################################
 ####FUNCTIONS################################################
 ####1. FUNCTION for creating count table#####################
 
@@ -109,9 +132,40 @@ CreaCounTable <- function(indiplotdata){
   return(test4)
 }
 
-####2.FUNCTION for creating ht-age table################
+####2.1 FUNCTION for creating ht-age table##############################
+CreaHATable<-function(label){
+  test1<-data.frame(matrix(unlist(strsplit(label," - ")),ncol = 6, byrow = TRUE))[1:3]
+  test2<-separate(test1,
+                  col = X1,
+                  into = paste0("spp",c(1,2,3,4)),
+                  sep = "\\d",
+                  extra = "drop")
+  test3<-separate(test2,
+                  col = X2,
+                  into = c("Age1","Age2"),
+                  sep = "/",
+                  extra = "drop",
+                  fill = "right")
+  test4<-separate(test3,
+                  col = X3,
+                  into = c("Ht1","Ht2"),
+                  sep = "/",
+                  extra = "drop",
+                  fill = "right")
+  sub_sp1<-data.frame(Spp = test4$spp1,
+                      Age = test4$Age1,
+                      Ht = test4$Ht1)
+  sub_sp2<-data.frame(Spp = test4$spp3,
+                      Age = test4$Age2,
+                      Ht = test4$Ht2)
+  test5<-rbind(sub_sp1,sub_sp2)
+  test5<-test5[!apply(is.na(test5),1,any),]
+  return(test5)
+}
 
-CreaHATable<-function(indiplotdata){
+####2.2 FUNCTION for creating SILVICULTURAL ht-age table################
+
+CreaHATable_Silvi<-function(indiplotdata){
 
   test<-indiplotdata[12:18,1:8] #extract the ht-age table from the measure table
   names(test)<-as.character(test[1,])
@@ -218,14 +272,15 @@ CreaHealTable<-function(indiplotdata){
 ##################################################
 ######TEST RUN for one opening and one plot#######
 ##################################################
-for (i in file_list){
-  i<-file_list[1]
-  tmp <- read.xlsx(i,
+HT_AGE_ALL<-NULL
+for (i in 1:length(file_list)){
+  indifile <- file_list[i]
+  tmp <- read.xlsx(indifile,
                    sheet="Report",
                    colNames = TRUE,
                    detectDates = TRUE)
-}
 
+}
 
 
 
