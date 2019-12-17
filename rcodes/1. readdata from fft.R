@@ -5,9 +5,14 @@ rm(list=ls())
 library(openxlsx)
 library(tidyr)
 options(stringsAsFactors = FALSE)
-fftdatapath <- file.path(".", "data", "rawdata", "fft")
-file_list <- dir(fftdatapath, full.names = TRUE)
+## this is the path to all the raw data
+datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
+## this is the path to the compiled data at intermediate stage
+## for example, count table you have extracted
+datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
 
+fftdatapath <- file.path(datapath, "fft")
+file_list <- dir(fftdatapath, full.names = TRUE)
 ####Summarise tables from all avaliable fft files########
 ####Extract and rashape tables from FFT survey data:
 #1. opening information -- Opening_Info;
