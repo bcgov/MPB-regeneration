@@ -8,7 +8,7 @@ options(stringsAsFactors = FALSE)
 ##load all functions
 source("./rcodes/2. readdata from fft_function.R")
 
-## this is the path to all the raw data
+## this is the path to all raw data
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
 ## this is the path to the compiled data at intermediate stage
 ## for example, count table you have extracted
@@ -21,6 +21,62 @@ file_list <- dir(fftdatapath, full.names = TRUE)
 ####RUN File Check first: check if all files are valid for compliation##########
 
 FileCheck(file_list)
+
+invalid_file<-NULL
+valid_file<-NULL
+for (i in 1:length(file_list)){
+  indifile <- file_list[i]
+  if (any(is.element(c("Report",1:20), getSheetNames(indifile)) == FALSE)){
+    invalid_file <- c(invalid_file, indifile)
+  }else{
+    reportTable <- read.xlsx(indifile,
+                             sheet="Report",
+                             colNames = TRUE,
+                             detectDates = TRUE)
+    test1 <- c(names(reportTable)[1] == "Opening.Information",
+               ncol(reportTable) == 20,
+               reportTable[c(1:5,8,9),3] == c("OPENING:", "OPENING ID:", "REGION:", "DISTRICT:  ", "LOCATION:", "AREA:", "# OF PLOTS:"),
+               reportTable[1,8] == "DATE:",
+               reportTable[8,7] == "BEC ZONE:",
+               reportTable[3:5,13] == c("LATITUDE:", "LONGITUDE:", "PLOT SIZE:"),
+               reportTable[21,18] == "SI",
+               reportTable[57,2]  == "% Host",
+               reportTable[22:24,2] == c("OS INVENTORY LABEL:", "US INVENTORY LABEL:", "SILVICULTURE LABEL:"))
+    if (is.element("FALSE",test1)){
+      invalid_file <- c(invalid_file, indifile)
+    } else{
+      NoPlot <- reportTable[9, 5]
+      invplot <- NULL
+      vplot <- NULL
+      for (indiplot in 1:NoPlot){
+        indiplotdata <- read.xlsx(indifile,
+                                  sheet = as.character(indiplot),
+                                  colNames = FALSE,
+                                  detectDates = TRUE)
+        test2 <- c(indiplotdata[1:19,1] == c("Opening #:", "Spp", "L1 (T)", "L1 (W)", "L1 (F)", "L2 (T)", "L2 (W)", "L2 (F)", "L3/4 (T)", "L3/4 (W)", "L3/4 (F)", NA, "L1 Ht", "L1 Age", "L2 Ht", "L2 Age", "L3/4 Ht", "L3/4 Age", "BAF #"),
+                   indiplotdata[1,8] == "Plot #:",
+                   indiplotdata[1,10] == "Date:",
+                   indiplotdata[2,9] == "FOREST HEALTH")
+        if (is.element("FALSE",test2)){
+          invplot <- c(invplot, paste0(indifile, "_", indiplot))
+        } else{
+          vplot <- c(vplot,indiplot)
+        }
+      }
+      if (length(vplot) == NoPlot){
+        valid_file <- c(valid_file, indifile)
+      }else {
+        invalid_file <- c(invalid_file,invplot)
+      }
+    }
+  }
+}
+if (length(invalid_file != 0)){
+  print(invalid_file)
+}else {
+  message ("all files pass file check")
+}
+
 
 ####Summarise tables from all avaliable fft files########
 ####Extract and rashape tables from FFT survey data:
