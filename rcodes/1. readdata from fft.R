@@ -1,6 +1,6 @@
 #####read FFT data########
 
-rm(list=ls())
+#rm(list=ls())
 #library(data.table)
 library(openxlsx)
 library(tidyr)
@@ -11,7 +11,6 @@ source("./rcodes/2. readdata from fft_function.R")
 ## this is the path to all raw data
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
 ## this is the path to the compiled data at intermediate stage
-## for example, count table you have extracted
 datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
 
 fftdatapath <- file.path(datapath, "fft")
@@ -19,8 +18,6 @@ fftdatapath_compiled<-file.path(datapath_compiled,"fft")
 file_list <- dir(fftdatapath, full.names = TRUE)
 
 ####RUN File Check first: check if all files are valid for compliation##########
-
-FileCheck(file_list)
 
 invalid_file<-NULL
 valid_file<-NULL
@@ -71,12 +68,14 @@ for (i in 1:length(file_list)){
     }
   }
 }
+
 if (length(invalid_file != 0)){
   print(invalid_file)
 }else {
   message ("all files pass file check")
 }
 
+rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot)
 
 ####Summarise tables from all avaliable fft files########
 ####Extract and rashape tables from FFT survey data:
@@ -165,9 +164,55 @@ if (length(invalid_file != 0)){
       HealTable_All <- rbind(HealTable_All, tmp_helthdata)
 
     }
-    rm(tmp_countdata, tmp_helthdata, tmp_bafdata, tmp_htagedata, opening_tmp,over,OVER,under,UNDER,htage_over,htage_under,htage_all)
+    rm(tmp_countdata, tmp_helthdata, tmp_bafdata, tmp_htagedata, opening_tmp,over,OVER,under,UNDER,htage_over,htage_under,htage_all,i,indifile,indiplot,indiplotdata,NoPlot,reportTable)
   }
 
+
+####combine count data, baf data and htage data, and create a summary table#########
+####1. calculate BA per ha by layer and species
+
+  BafTable_All[is.na(BafTable_All$SPP),"SPP"]<-"Dead"
+  BafTable_All$Layer[BafTable_All$Layer == "L1" | BafTable_All$Layer == "L2"] <- "L1/L2"
+
+  BAsummary<- aggregate(BafTable_All$count,
+                        by=list(Opening = BafTable_All$opening,
+                                Layer = BafTable_All$Layer,
+                                SPP = BafTable_All$SPP),
+                        FUN = sum)
+
+  for (i in 1:dim(BAsummary)[1]){
+    opening<-BAsummary[i,"Opening"]
+    Noplot<-length(unique(BafTable_All$plotid[BafTable_All$opening==opening]))
+    BAsummary$BAPH[i]<-round(BAsummary[i,"x"]*5/Noplot, digits = 2)
+  }
+
+  BAsummary<-BAsummary[order(BAsummary$Opening),-4]
+
+####2. calculate TPH by layer and species
+
+  TPHsummary<- aggregate(CounTable_T$count,
+                         by=list(Opening = CounTable_T$opening,
+                                 Layer = CounTable_T$Layer,
+                                 SPP = CounTable_T$Species),
+                         FUN = sum)
+
+  for (i in 1:dim(TPHsummary)[1]){
+    opening<-TPHsummary[i,"Opening"]
+    Noplot<-length(unique(CounTable_T$plotid[CounTable_T$opening==opening]))
+    TPHsummary$TPH[i]<-round(TPHsummary[i,"x"]*10000/(50*Noplot))
+  }
+
+  TPHsummary<-TPHsummary[order(TPHsummary$Opening,TPHsummary$Layer),-4]
+  TPHsummary$Layer[TPHsummary$Layer == "L1"|TPHsummary$Layer == "L2"] <- "L1/L2"
+  TPHsummary$Layer[TPHsummary$Layer == "L3/4"] <- "L3/L4"
+
+####3. combine count data, baf data and htage data
+
+  tmp <- merge(TPHsummary,BAsummary,by = c("Opening","Layer","SPP"), all = TRUE)
+  Inventory_Sum <- merge(tmp,HtAgeTable_T,by = c("Opening","Layer","SPP"),all = TRUE)
+  row.names(Inventory_Sum) <- NULL
+
+  rm(i,Noplot,opening,tmp)
 ####save output to .csv or .drs#############################
 
   output <- list(Opening_Info = Opening_Info,
@@ -176,10 +221,11 @@ if (length(invalid_file != 0)){
                  HtAgeTable_T = HtAgeTable_T,
                  HtAgeTable_Silvi = HtAgeTable_Silvi,
                  BafTable_All = BafTable_All,
-                 HealTable_All = HealTable_All)
+                 HealTable_All = HealTable_All,
+                 Inventory_Sum = Inventory_Sum)
   save.file(output,
           savename = "fftcompile_2opening",
-          saveformat = "rds")
+          saveformat = "csv")
 
 
 

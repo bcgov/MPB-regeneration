@@ -58,10 +58,10 @@ CreaHATable<-function(label){
                   sep = "/",
                   extra = "drop",
                   fill = "right")
-  sub_sp1<-data.frame(Spp = test4$spp1,
+  sub_sp1<-data.frame(SPP = test4$spp1,
                       Age = test4$Age1,
                       Ht = test4$Ht1)
-  sub_sp2<-data.frame(Spp = test4$spp3,
+  sub_sp2<-data.frame(SPP = test4$spp3,
                       Age = test4$Age2,
                       Ht = test4$Ht2)
   test5<-rbind(sub_sp1,sub_sp2)
@@ -180,6 +180,7 @@ save.file<-function(output,savename,saveformat){
     write.csv(output$HtAgeTable_Silvi,file.path(fftdatapath_compiled,paste0(savename,"_HtAge_silvi.csv")),row.names = FALSE)
     write.csv(output$BafTable_All,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.csv")),row.names = FALSE)
     write.csv(output$HealTable_All,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.csv")),row.names = FALSE)
+    write.csv(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.csv")),row.names = FALSE)
   }
   if (saveformat == "rds"){
     saveRDS(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.rds")))
@@ -189,6 +190,7 @@ save.file<-function(output,savename,saveformat){
     saveRDS(output$HtAgeTable_Silvi,file.path(fftdatapath_compiled,paste0(savename,"_HtAge_silvi.rds")))
     saveRDS(output$BafTable_All,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.rds")))
     saveRDS(output$HealTable_All,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.rds")))
+    saveRDS(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.rds")))
   }
 }
 
