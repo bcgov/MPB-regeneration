@@ -1,16 +1,21 @@
 #####read FFT data########
 
 rm(list=ls())
-#library(data.table)
+library(data.table)
 library(openxlsx)
 library(tidyr)
 options(stringsAsFactors = FALSE)
+
 ##load all functions
+
 source("./rcodes/2. readdata from fft_function.R")
 
 ## this is the path to all raw data
+
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
+
 ## this is the path to the compiled data at intermediate stage
+
 datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
 
 fftdatapath <- file.path(datapath, "fft")
@@ -106,20 +111,25 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
     reportTable <- read.xlsx(indifile,
                              sheet = "Report",
                              detectDates = TRUE) #extract the summary table of this opening
+
     ####extract opening information###
+
     opening_tmp<-data.frame(cbind(Opening = reportTable[1,5],
                                   Openingid = reportTable[2,5],
                                   Region = reportTable[3,5],
                                   District = reportTable[4,5],
                                   Location = reportTable[5,5],
+                                  BEC = reportTable[8,10],
+                                  Area_ha = reportTable[5,10],
                                   Date = reportTable[1,10],
                                   Lat = reportTable[3,16],
                                   Long = reportTable[4,16],
+                                  plot_Number = as.numeric(reportTable[9,5]),
                                   Plot_size_m2 = reportTable[5,16],
-                                  Area_ha = reportTable[8,5],
-                                  plot_Number = reportTable[9,5],
-                                  BEC = reportTable[8,10],
+                                  BAF = as.numeric(reportTable[42,6]),
                                   SI = reportTable[22,18],
+                                  Overstory_TPH = as.numeric(reportTable[30,10]),
+                                  understory_TPH = as.numeric(reportTable[31,10]),
                                   Mortality = reportTable[57,3]))
     opening_tmp$Lat<-gsub(" ","",opening_tmp$Lat)
     opening_tmp$Lat<-gsub("º","°",opening_tmp$Lat)
@@ -127,17 +137,16 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
     opening_tmp$Long<-gsub("º","°",opening_tmp$Long)
     opening_tmp$Area_ha <- as.numeric(gsub(" ha", "", opening_tmp$Area_ha))
     opening_tmp$Plot_size_m2 <- as.numeric(gsub("m2","",opening_tmp$Plot_size_m2))
-    opening_tmp$plot_Number <- as.numeric(opening_tmp$plot_Number)
     opening_tmp$SI <- round(as.numeric(opening_tmp$SI),digits = 0)
     opening_tmp$Mortality <- round(as.numeric(opening_tmp$Mortality),digits = 2)
     Opening_Info<- rbind(Opening_Info,opening_tmp)
     cat(" Opening table is done. \n")
+
     ####extract ht and age
-    ## it may be a good idea to name this table as labelTable,
-    ##
+
     over<-reportTable[22,6]
     htage_over<-CreaHATable(over)
-    OVER<-data.frame(Opening = reportTable[1,5],
+    OVER<-data.table(Opening = reportTable[1,5],
                      Layer = "L1/L2",
                      htage_over)
     under<-reportTable[23,6]
@@ -150,6 +159,7 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
     cat(" Height and age table is done. \n")
 
     ####extract 1. count table 2. silvi ht-age table 3. baf table 4. forest health table
+
     NoPlot <- reportTable[9, 5]
     for (indiplot in 1:NoPlot) {
       indiplotdata <- read.xlsx(indifile,
@@ -167,15 +177,19 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
       cat("   Count table in plot", indiplot, "is done. \n")
 
       ####2. Silvi Ht-Age table
+
       tmp_htagedata <- CreaHATable_Silvi(indiplotdata)
       HtAgeTable_Silvi <- rbind(HtAgeTable_Silvi, tmp_htagedata)
       cat("   HtAgeTable_Silvi in plot", indiplot, "is done. \n")
+
       ####3. BAF count table
+
       tmp_bafdata <- CreaBafTable(indiplotdata,reportTable)
       BafTable_All <- rbind(BafTable_All, tmp_bafdata)
       cat("   BA measurement in plot", indiplot, "is done. \n")
 
       ####4. Forest health table
+
       tmp_helthdata <- CreaHealTable(indiplotdata)
       HealTable_All <- rbind(HealTable_All, tmp_helthdata)
       cat("   Health table in plot", indiplot, "is done. \n")
@@ -186,32 +200,34 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
 ####combine count data, baf data and htage data, and create a summary table#########
 ####1. calculate BA per ha by layer and species
 
-  BafTable_All[is.na(BafTable_All$SPP),"SPP"] <- "Missing"
-  BafTable_All$Layer[BafTable_All$Layer == "L1" | BafTable_All$Layer == "L2"] <- "L1/L2"
+  BafTable_process <- copy(BafTable_All)
 
-  BAsummary<- aggregate(BafTable_All$count,
-                        by=list(Opening = BafTable_All$opening,
-                                Layer = BafTable_All$Layer,
-                                SPP = BafTable_All$SPP),
-                        FUN = sum)
+  BafTable_process[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
+
+  BAsummary <- BafTable_process[,.(BAF_Count = sum(Count)),
+                                by = c("Opening","Layer","Spp")]
+  #BAsummary<- aggregate(BafTable_All$count,
+  #                      by=list(Opening = BafTable_All$Opening,
+  #                              Layer = BafTable_All$Layer,
+  #                              SPP = BafTable_All$Spp),
+  #                      FUN = sum)
 
   for (i in 1:dim(BAsummary)[1]){
-    opening<-BAsummary[i,"Opening"]
-    Noplot<-length(unique(BafTable_All$plotid[BafTable_All$opening==opening]))
-    BAsummary$BAPH[i]<-round(BAsummary[i,"x"]*5/Noplot, digits = 2) ## BAF should be dynamic with field measurement
+    opening<-BAsummary[i,Opening]
+    Noplot<-length(unique(BafTable_All$Plotid[BafTable_All$Opening==opening]))
+    baf<- as.numeric(Opening_Info$BAF[Opening_Info$Opening==opening])
+    BAsummary[i,BAPH := round(BAF_Count*baf/Noplot, digits = 2)]
   }
-  BAsummary$x <- NULL
-
 
 ####2. calculate TPH by layer and species
-  CounTable_T_process <- CounTable_T %>% data.table
+
+  CounTable_T_process <- copy(CounTable_T)
 
   CounTable_T_process[Layer %in% c("L1", "L2", "L1/2"), Layer := "L1/L2"]
   CounTable_T_process[Layer %in% c("L3", "L4", "L3/4"), Layer := "L3/L4"]
 
-  TPHsummary <- CounTable_T_process[,.(totalN = sum(count)),
-                                    by = c("opening", "Layer", "Species")]
-
+  TPHsummary <- CounTable_T_process[,.(TotalN = sum(Count)),
+                                    by = c("Opening", "Layer", "Spp")]
   # TPHsummary<- aggregate(a$count,
   #                        by=list(Opening = b$opening,
   #                                Layer = b$Layer,
@@ -219,21 +235,20 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
   #                        FUN = sum)
 
   for (i in 1:dim(TPHsummary)[1]){
-    opening<-TPHsummary[i,"Opening"]
-    Noplot<-length(unique(CounTable_T$plotid[CounTable_T$opening==opening]))
-    TPHsummary$TPH[i]<-round(TPHsummary[i,"x"]*10000/(50*Noplot)) # use plot size
+    opening<-TPHsummary[i,Opening]
+    Noplot<-length(unique(CounTable_T$Plotid[CounTable_T$Opening==opening]))
+    size<-as.numeric(Opening_Info$Plot_size_m2[Opening_Info$Opening==opening])
+    TPHsummary[i, TPH := round(TotalN*10000/(size*Noplot))]
   }
-
-  TPHsummary<-TPHsummary[order(TPHsummary$Opening,TPHsummary$Layer),-4]
 
 
 ####3. combine count data, baf data and htage data
 
-  tmp <- merge(TPHsummary,BAsummary,by = c("Opening","Layer","SPP"), all = TRUE)
-  Inventory_Sum <- merge(tmp,HtAgeTable_T,by = c("Opening","Layer","SPP"),all = TRUE)
-  row.names(Inventory_Sum) <- NULL
+  tmp <- merge(TPHsummary,BAsummary,by = c("Opening","Layer","Spp"), all = TRUE)
+  Inventory_Sum <- merge(tmp,HtAgeTable_T,by = c("Opening","Layer","Spp"),all = TRUE)
 
-  rm(i,Noplot,opening,tmp)
+  rm(i,Noplot,opening,tmp,baf,size,BafTable_process,CounTable_T_process)
+
 ####save output to .csv or .rds#############################
 
   output <- list(Opening_Info = Opening_Info,
@@ -246,7 +261,7 @@ rm(i,indifile,indiplot,indiplotdata,invplot,NoPlot,reportTable,test1,test2,vplot
                  Inventory_Sum = Inventory_Sum)
   save.file(output,
           savename = "fftcompile_2opening",
-          saveformat = "csv")
+          saveformat = "rds")
 
 
 

@@ -4,18 +4,18 @@
 
 CreaCounTable <- function(indiplotdata){
 
-  test <- indiplotdata[2:11,1:8] #extract the count table from the measure table
+  test <- indiplotdata[2:11,1:8] %>% data.table #extract the count table from the measure table
   names(test) <- as.character(test[1,]) #set the column names to be the first row of count table
   test <- test[-1,] #remove first row as it is now the column names
-  test <- test[,!apply(is.na(test),2,all)] #remove na columns
+  test <- test[,which(apply(is.na(test),2,all)) := NULL] #remove na columns
   test1 <- reshape(test,
                    varying = 2:dim(test)[2],
-                   v.names = "count",
+                   v.names = "Count",
                    times=names(test)[2:dim(test)[2]],
                    timevar = "Species",
                    direction="long") #reshape the count table to long table
   test1 <- subset(test1,select = -id) #remove unnecessary id column, which is creating from "reshape" step
-  test1$count <- as.numeric(test1$count)
+  test1$Count <- as.numeric(test1$Count)
   ## before clean this column, it would be better to remove any space between letters
   test1$Spp <- gsub(" ", "", test1$Spp)
   test2 <- separate(test1,
@@ -29,43 +29,43 @@ CreaCounTable <- function(indiplotdata){
   ## after using "(" to seperate, all we need to do is to remove ")"
   test2$Status <- gsub("\\)", "", test2$Status)
 
-  test3 <- cbind(opening = indiplotdata[1,3],
-                 plotid = indiplotdata[1,9],
+  test3 <- cbind(Opening = indiplotdata[1,3],
+                 Plotid = indiplotdata[1,9],
                  test2)
-  test4 <- test3[!apply(is.na(test3),1,any),] #remove rows that contain na
-  row.names(test4)<-NULL
-  return(test4)
+  test3 <- test3[!is.na(test3$Count),] #remove rows that contain na
+  setnames(test3,"Species","Spp")
+  return(test3)
 }
 
 ####2.1 FUNCTION for creating ht-age table##############################
 
 CreaHATable<-function(label){
-  test1<-data.frame(matrix(unlist(strsplit(label," - ")),ncol = 6, byrow = TRUE))[1:3]
+  test1<-data.table(matrix(unlist(strsplit(label," - ")),ncol = 6, byrow = TRUE))
   test2<-separate(test1,
-                  col = X1,
+                  col = V1,
                   into = paste0("spp",c(1,2,3,4)),
                   sep = "\\d",
                   extra = "drop")
   test3<-separate(test2,
-                  col = X2,
+                  col = V2,
                   into = c("Age1","Age2"),
                   sep = "/",
                   extra = "drop",
                   fill = "right")
   test4<-separate(test3,
-                  col = X3,
+                  col = V3,
                   into = c("Ht1","Ht2"),
                   sep = "/",
                   extra = "drop",
                   fill = "right")
-  sub_sp1<-data.frame(SPP = test4$spp1,
+  sub_sp1<-data.table(Spp = test4$spp1,
                       Age = test4$Age1,
                       Ht = test4$Ht1)
-  sub_sp2<-data.frame(SPP = test4$spp3,
+  sub_sp2<-data.table(Spp = test4$spp3,
                       Age = test4$Age2,
                       Ht = test4$Ht2)
   test5<-rbind(sub_sp1,sub_sp2)
-  test5<-test5[!apply(is.na(test5),1,any),]
+  test5<-test5[which(!apply(is.na(test5),1,any)),]
   return(test5)
 }
 
@@ -73,11 +73,11 @@ CreaHATable<-function(label){
 
 CreaHATable_Silvi<-function(indiplotdata){
 
-  test<-indiplotdata[12:18,1:8] #extract the ht-age table from the measure table
+  test<-indiplotdata[12:18,1:8] %>% data.table #extract the ht-age table from the measure table
   names(test)<-as.character(test[1,])
   test<-test[-1,]
-  test<-test[,!apply(is.na(test),2,all)] #remove na columns
-  if (is.data.frame((test))){
+  test<-test[,which(apply(is.na(test),2,all)) := NULL] #remove na columns
+  if (dim(test)[2] > 1){
     names(test)[1]<-"Attributes"  #replace NA to "Attributes" for first column's name
     test1<-separate(test,
                     col = "Attributes",
@@ -92,10 +92,10 @@ CreaHATable_Silvi<-function(indiplotdata){
     sub_Age<-test1[test1$Attribute=="Age",]
     test2<-merge(sub_Ht,sub_Age,by = c("Layer","time"),suffixes = c("Ht","Age"))
     test3<-subset(test2,select = c(Layer,time,numberHt,numberAge))
-    names(test3)<-c("Layer","SPP","Ht","Age")
+    names(test3)<-c("Layer","Spp","Ht","Age")
     test3<-test3[!apply(is.na(test3),1,any),]
-    test4<-cbind(opening = indiplotdata[1,3],
-                 plotid = indiplotdata[1,9],
+    test4<-cbind(Opening = indiplotdata[1,3],
+                 Plotid = indiplotdata[1,9],
                  test3)
     test4$Ht<-as.numeric(test4$Ht)
     test4$Age<-as.numeric(test4$Age)
@@ -110,33 +110,33 @@ CreaHATable_Silvi<-function(indiplotdata){
 
 CreaBafTable<-function(indiplotdata, reportTable){
 
-  test<-indiplotdata[19:20,1:8]
-  names(test)<-as.character(test[1,])
-  names(test)[1]<-"BAF"
+  test <- indiplotdata[19:20,1:8] %>% data.table
+  names(test) <- as.character(test[1,])
+  setnames(test,"BAF #","BAF")
   test<-test[-1,]
-  test[is.na(test$BAF),"BAF"]<-reportTable[42,6]
-  test<-test[,!apply(is.na(test),2,all)]
-  if (is.data.frame(test)){
+  test[is.na(test$BAF),BAF := reportTable[42,6]]
+  test[,which(apply(is.na(test),2,all)) := NULL]
+  if (dim(test)[2] > 1){
     test1<-reshape(test,
                    varying = 2:dim(test)[2],
-                   v.names = "count",
+                   v.names = "Count",
                    times=names(test)[2:dim(test)[2]],
                    direction="long") #reshape to long table##
     test2<-separate(test1,
                     col = "time",
-                    into = c("SPP","Layer"),
+                    into = c("Spp","Layer"),
                     sep = " ",
                     fill = "left")
     test2<-subset(test2,select = -id)
-    row.names(test2)<-NULL
-    test3<-cbind(opening = indiplotdata[1,3],
-                 plotid = indiplotdata[1,9],
+    test3<-cbind(Opening = indiplotdata[1,3],
+                 Plotid = indiplotdata[1,9],
                  test2)
-    test3$count<-as.numeric(test3$count)
+    test3$Count<-as.numeric(test3$Count)
+    test3[is.na(test3$Spp), Spp := "Missing"]
   }else{
     test3<-NULL
   }
-  row.names(test3)<-NULL
+  test3 <- test3[!is.na(test3$Count)]
   return(test3)
 }
 
@@ -144,28 +144,26 @@ CreaBafTable<-function(indiplotdata, reportTable){
 
 CreaHealTable<-function(indiplotdata){
 
-  test<-indiplotdata[3:26,9:12]
+  test<-indiplotdata[3:26,9:12] %>% data.table
   names(test)<-as.character(test[1,])
   test<-test[-1,]
-  test<-test[!apply(is.na(test),1,all),]
-  if (dim(test)[1]!="0"){
+  test<-test[!which(apply(is.na(test),1,all)),]
+  if (dim(test)[1] != 0 ){
     test1<-reshape(test,
                    varying = 3:4,
-                   v.names = "count",
+                   v.names = "Count",
                    times=names(test)[3:4],
                    direction="long") #reshape to long table##
     test1<-subset(test1,select = -id)
-    row.names(test1)<-NULL
-    test1<-test1[!apply(is.na(test1),1,any),]
-    names(test1)[3]<-"Status"
-    test2<-cbind(opening = indiplotdata[1,3],
-                 plotid = indiplotdata[1,9],
+#    test1<-test1[!which(apply(is.na(test1),1,any)),]
+    setnames(test1,"time","Status")
+    test2<-cbind(Opening = indiplotdata[1,3],
+                 Plotid = indiplotdata[1,9],
                  test1)
-    test2$count<-as.numeric(test2$count)
+    test2$Count<-as.numeric(test2$Count)
   }else{
     test2<-NULL
   }
-  row.names(test2)<-NULL
   return(test2)
 }
 
