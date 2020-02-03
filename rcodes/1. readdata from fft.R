@@ -114,48 +114,74 @@ for (i in 1:length(file_list)){
                            sheet = "Report",
                            detectDates = TRUE) #extract the summary table of this opening
 
+  ####extrac overstory and understory label###
+  over_tmp<-reportTable[22,6]
+  over<-CreaLabel(over_tmp)
+  under_tmp<-reportTable[23,6]
+  under<-CreaLabel(under_tmp)
+
   ####extract opening information###
 
-  opening_tmp<-data.frame(cbind(Opening = reportTable[1,5],
-                                Openingid = reportTable[2,5],
-                                Region = reportTable[3,5],
-                                District = reportTable[4,5],
-                                Location = reportTable[5,5],
-                                BEC = reportTable[8,10],
-                                Area_ha = reportTable[5,10],
-                                Date = reportTable[1,10],
-                                Lat = reportTable[3,16],
-                                Long = reportTable[4,16],
-                                plot_Number = as.numeric(reportTable[9,5]),
-                                Plot_size_m2 = reportTable[5,16],
-                                BAF = as.numeric(reportTable[42,6]),
-                                SI = reportTable[22,18],
-                                Overstory_TPH = as.numeric(reportTable[30,10]),
-                                understory_TPH = as.numeric(reportTable[31,10]),
-                                Mortality = reportTable[57,3]))
+  opening_tmp<-data.table(Opening = reportTable[1,5],
+                          Openingid = reportTable[2,5],
+                          Region = reportTable[3,5],
+                          District = reportTable[4,5],
+                          Location = reportTable[5,5],
+                          BEC = reportTable[8,10],
+                          Area_ha = reportTable[5,10],
+                          Date = reportTable[1,10],
+                          Lat = reportTable[3,16],
+                          Long = reportTable[4,16],
+                          plot_Number = as.numeric(reportTable[9,5]),
+                          Plot_size_m2 = reportTable[5,16],
+                          BAF = as.numeric(reportTable[42,6]),
+                          SI = as.numeric(over$SI),
+                          Over_TPH = as.numeric(over$TPH),
+                          Over_CC = as.numeric(over$CC),
+                          Under_TPH = as.numeric(under$TPH),
+                          Under_CC = as.numeric(under$CC),
+                          Mortality = reportTable[57,3])
   opening_tmp$Lat<-gsub(" ","",opening_tmp$Lat)
   opening_tmp$Lat<-gsub("º","°",opening_tmp$Lat)
   opening_tmp$Long<-gsub(" ","",opening_tmp$Long)
   opening_tmp$Long<-gsub("º","°",opening_tmp$Long)
   opening_tmp$Area_ha <- as.numeric(gsub(" ha", "", opening_tmp$Area_ha))
   opening_tmp$Plot_size_m2 <- as.numeric(gsub("m2","",opening_tmp$Plot_size_m2))
-  opening_tmp$SI <- round(as.numeric(opening_tmp$SI),digits = 0)
   opening_tmp$Mortality <- round(as.numeric(opening_tmp$Mortality),digits = 2)
   Opening_Info<- rbind(Opening_Info,opening_tmp)
   cat(" Opening table is done. \n")
 
   ####extract ht and age
+  ####overstory
 
-  over<-reportTable[22,6]
-  htage_over<-CreaHATable(over)
+  osub_sp1<-data.table(Spp = over$spp1,
+                       Age = over$Age1,
+                       Ht = over$Ht1)
+  osub_sp2<-data.table(Spp = over$spp3,
+                       Age = over$Age2,
+                       Ht = over$Ht2)
+  htage_over<-rbind(osub_sp1,osub_sp2)
+  htage_over<-htage_over[which(!apply(is.na(htage_over),1,any)),]
   OVER<-data.table(Opening = reportTable[1,5],
                    Layer = "L1/L2",
                    htage_over)
-  under<-reportTable[23,6]
-  htage_under<-CreaHATable(under)
-  UNDER<-data.frame(Opening = reportTable[1,5],
+
+  ####understory
+
+  usub_sp1<-data.table(Spp = under$spp1,
+                       Age = under$Age1,
+                       Ht = under$Ht1)
+  usub_sp2<-data.table(Spp = under$spp3,
+                       Age = under$Age2,
+                       Ht = under$Ht2)
+  htage_under<-rbind(usub_sp1,usub_sp2)
+  htage_under<-htage_under[which(!apply(is.na(htage_under),1,any)),]
+  UNDER<-data.table(Opening = reportTable[1,5],
                     Layer = "L3/L4",
                     htage_under)
+
+  ####combine overstory ht-age and understory ht-age
+
   htage_all<-rbind(OVER,UNDER)
   HtAgeTable<-rbind(HtAgeTable,htage_all)
   cat(" Height and age table is done. \n")
@@ -188,7 +214,7 @@ for (i in 1:length(file_list)){
     HealTable <- rbind(HealTable, tmp_helthdata)
     cat("   Health table in plot", indiplot, "is done. \n")
   }
-rm(tmp_countdata, tmp_helthdata, tmp_bafdata, tmp_htagedata, opening_tmp,over,OVER,under,UNDER,htage_over,htage_under,htage_all,i,indifile,indiplot,indiplotdata,NoPlot,reportTable)
+rm(tmp_countdata, tmp_helthdata, tmp_bafdata, opening_tmp,over,over_tmp,OVER,osub_sp1,osub_sp2,under,under_tmp,UNDER,usub_sp1,usub_sp2,htage_over,htage_under,htage_all,i,indifile,indiplot,indiplotdata,NoPlot,reportTable)
 }
 
 ################################################################################################
@@ -252,12 +278,12 @@ rm(i,Noplot,opening,tmp,baf,size,BafTable_process,CounTable_process)
 output <- list(Opening_Info = Opening_Info,
                CounTable = CounTable,
                HtAgeTable = HtAgeTable,
-               BafTable = BafTable_All,
-               HealTable = HealTable_All,
+               BafTable = BafTable,
+               HealTable = HealTable,
                Inventory_Sum = Inventory_Sum)
 save.file(output,
           savename = "fftcompile_2opening",
-          saveformat = "rds")
+          saveformat = "csv")
 
 
 

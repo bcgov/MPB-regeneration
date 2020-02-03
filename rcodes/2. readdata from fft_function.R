@@ -37,9 +37,11 @@ CreaCounTable <- function(indiplotdata){
   return(test3)
 }
 
-####2. FUNCTION for creating ht-age table##############################
+####2. FUNCTION for extracting overstory and understory label##############################
+####ht and age are coming from the overtory and understory label
+####site index (SI), crown closure (CC) and TPH in the OPENING INFORMATION TABLE are coming from the overstory and understory lable
 
-CreaHATable<-function(label){
+CreaLabel<-function(label){
   test1<-data.table(matrix(unlist(strsplit(label," - ")),ncol = 6, byrow = TRUE))
   test2<-separate(test1,
                   col = V1,
@@ -58,15 +60,19 @@ CreaHATable<-function(label){
                   sep = "/",
                   extra = "drop",
                   fill = "right")
-  sub_sp1<-data.table(Spp = test4$spp1,
-                      Age = test4$Age1,
-                      Ht = test4$Ht1)
-  sub_sp2<-data.table(Spp = test4$spp3,
-                      Age = test4$Age2,
-                      Ht = test4$Ht2)
-  test5<-rbind(sub_sp1,sub_sp2)
-  test5<-test5[which(!apply(is.na(test5),1,any)),]
-  return(test5)
+  test5<-separate(test4,
+                  col = V4,
+                  into = c("SI","DIR"),
+                  sep = "/",
+                  extra = "drop")
+  setnames(test5,"V5","CC")
+  test6<-separate(test5,
+                  col = V6,
+                  into = c("TPH","YR"),
+                  sep = "\\(",
+                  extra = "drop")
+  test6$YR<-gsub("\\)","",test6$YR)
+  return(test6)
 }
 
 ####3.FUNCTION for creating BAF count table#########################
