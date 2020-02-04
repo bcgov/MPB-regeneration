@@ -155,11 +155,11 @@ for (i in 1:length(file_list)){
   ####overstory
 
   osub_sp1<-data.table(Spp = over$spp1,
-                       Age = over$Age1,
-                       Ht = over$Ht1)
+                       Age = as.numeric(over$Age1),
+                       Ht = as.numeric(over$Ht1))
   osub_sp2<-data.table(Spp = over$spp3,
-                       Age = over$Age2,
-                       Ht = over$Ht2)
+                       Age = as.numeric(over$Age2),
+                       Ht = as.numeric(over$Ht2))
   htage_over<-rbind(osub_sp1,osub_sp2)
   htage_over<-htage_over[which(!apply(is.na(htage_over),1,any)),]
   OVER<-data.table(Opening = reportTable[1,5],
@@ -169,11 +169,11 @@ for (i in 1:length(file_list)){
   ####understory
 
   usub_sp1<-data.table(Spp = under$spp1,
-                       Age = under$Age1,
-                       Ht = under$Ht1)
+                       Age = as.numeric(under$Age1),
+                       Ht = as.numeric(under$Ht1))
   usub_sp2<-data.table(Spp = under$spp3,
-                       Age = under$Age2,
-                       Ht = under$Ht2)
+                       Age = as.numeric(under$Age2),
+                       Ht = as.numeric(under$Ht2))
   htage_under<-rbind(usub_sp1,usub_sp2)
   htage_under<-htage_under[which(!apply(is.na(htage_under),1,any)),]
   UNDER<-data.table(Opening = reportTable[1,5],
