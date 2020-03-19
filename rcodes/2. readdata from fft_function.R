@@ -29,15 +29,26 @@ CreaCounTable <- function(indiplotdata){
   ## after using "(" to seperate, all we need to do is to remove ")"
   test2$Status <- gsub("\\)", "", test2$Status)
 
-  test3 <- cbind(Opening = indiplotdata[1,3],
-                 Plotid = indiplotdata[1,9],
-                 test2)
+  if (!is.element("BASAL Data",indiplotdata[21,9])){
+
+    test3 <- cbind(Opening = indiplotdata[1,3],
+                   Plotid = indiplotdata[1,9],
+                   Survey_Date = indiplotdata[1,11],
+                   test2)
+  }else{
+
+    test3 <- cbind(Opening = indiplotdata[1,3],
+                   Plotid = indiplotdata[1,10],
+                   Survey_Date = indiplotdata[1,12],
+                   test2)
+  }
+
   test3 <- test3[!is.na(test3$Count),] #remove rows that contain na
   setnames(test3,"Species","Spp")
   return(test3)
 }
 
-####2. FUNCTION for extracting overstory and understory label##############################
+####2.1 FUNCTION for extracting overstory and understory label##############################
 ####ht and age are coming from the overtory and understory label
 ####site index (SI), crown closure (CC) and TPH in the OPENING INFORMATION TABLE are coming from the overstory and understory lable
 
@@ -75,15 +86,85 @@ CreaLabel<-function(label){
   return(test6)
 }
 
+####2.2 FUNCTION for creating AGE and HT table from the Inv sheet if there is no label####
+
+CreaAgeht <- function(indiplotdata){
+  indiplotdata <- indiplotdata %>% data.table
+  colnames(indiplotdata)[1] <- "Layer"
+  indiplotdata[, Layer := na.locf0(Layer, fromLast = FALSE)]
+
+  over <- indiplotdata[Layer %in% "L1/L2"]
+  over <- over[-c(1,2)]
+
+  colnames(over) <- c("Layer","Plot","CC","SP1","PCT1","Age1","Ht1","SP2","PCT2","Age2","Ht2","SP3","PCT3","SP4","PCT4","SP5","PCT5","SP6","PCT6")
+
+  over <- over[!is.na(Plot)]
+
+  over<-melt(over,
+             id.vars = c("Layer","Plot","CC","PCT1","Age1","Ht1","PCT2","Age2","Ht2","PCT3","PCT4","PCT5","PCT6"),
+             measure.vars = c("SP1","SP2","SP3","SP4","SP5","SP6"),
+             variable.name = "SP_order",
+             value.name = "SP")
+
+  over[SP_order %in% "SP1", PCT := PCT1]
+  over[SP_order %in% "SP1", Age := Age1]
+  over[SP_order %in% "SP1", Ht := round(as.numeric(Ht1), digits = 2)]
+  over[SP_order %in% "SP2", PCT := PCT2]
+  over[SP_order %in% "SP2", Age := Age2]
+  over[SP_order %in% "SP2", Ht := round(as.numeric(Ht2), digits = 2)]
+  over[SP_order %in% "SP3", PCT := PCT3]
+  over[SP_order %in% "SP4", PCT := PCT4]
+  over[SP_order %in% "SP5", PCT := PCT5]
+  over[SP_order %in% "SP6", PCT := PCT6]
+
+  over[,c("SP_order","PCT1","Age1","Ht1","PCT2","Age2","Ht2","PCT3","PCT4","PCT5","PCT6") := NULL]
+  over <- over[!is.na(SP)]
+  over <- over[order(over$Plot)]
+
+  under <- indiplotdata[Layer %in% "L3/L4"]
+  under <- under[-c(1,2)]
+
+  colnames(under) <- c("Layer","Plot","CC","SP1","PCT1","Age1","Ht1","SP2","PCT2","Age2","Ht2","SP3","PCT3","SP4","PCT4","SP5","PCT5","SP6","PCT6")
+
+  under <- under[!is.na(Plot)]
+
+  under<-melt(under,
+              id.vars = c("Layer","Plot","CC","PCT1","Age1","Ht1","PCT2","Age2","Ht2","PCT3","PCT4","PCT5","PCT6"),
+              measure.vars = c("SP1","SP2","SP3","SP4","SP5","SP6"),
+              variable.name = "SP_order",
+              value.name = "SP")
+
+  under[SP_order %in% "SP1", PCT := PCT1]
+  under[SP_order %in% "SP1", Age := Age1]
+  under[SP_order %in% "SP1", Ht := round(as.numeric(Ht1), digits = 2)]
+  under[SP_order %in% "SP2", PCT := PCT2]
+  under[SP_order %in% "SP2", Age := Age2]
+  under[SP_order %in% "SP2", Ht := round(as.numeric(Ht2),digits = 2)]
+  under[SP_order %in% "SP3", PCT := PCT3]
+  under[SP_order %in% "SP4", PCT := PCT4]
+  under[SP_order %in% "SP5", PCT := PCT5]
+  under[SP_order %in% "SP6", PCT := PCT6]
+
+  under[,c("SP_order","PCT1","Age1","Ht1","PCT2","Age2","Ht2","PCT3","PCT4","PCT5","PCT6") := NULL]
+  under <- under[!is.na(SP)]
+  under <- under[order(under$Plot)]
+
+  ageht <- rbind(over,under)
+  ageht <- ageht[order(ageht$Plot)]
+
+  return(ageht)
+}
+
+
 ####3.FUNCTION for creating BAF count table#########################
 
-CreaBafTable<-function(indiplotdata, reportTable){
+CreaBafTable<-function(indiplotdata){
 
   test <- indiplotdata[19:20,1:8] %>% data.table
   names(test) <- as.character(test[1,])
   setnames(test,"BAF #","BAF")
   test<-test[-1,]
-  test[is.na(test$BAF),BAF := reportTable[42,6]]
+  test[is.na(test$BAF),BAF := 5]
   test[,which(apply(is.na(test),2,all)) := NULL]
   if (dim(test)[2] > 1){
     test1<-reshape(test,
@@ -97,9 +178,19 @@ CreaBafTable<-function(indiplotdata, reportTable){
                     sep = " ",
                     fill = "left")
     test2<-subset(test2,select = -id)
-    test3<-cbind(Opening = indiplotdata[1,3],
-                 Plotid = indiplotdata[1,9],
-                 test2)
+    if (!is.element("BASAL Data",indiplotdata[21,9])){
+
+      test3 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,9],
+                     Survey_Date = indiplotdata[1,11],
+                     test2)
+    }else{
+
+      test3 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,10],
+                     Survey_Date = indiplotdata[1,12],
+                     test2)
+    }
     test3$Count<-as.numeric(test3$Count)
     test3[is.na(test3$Spp), Spp := "Missing"]
   }else{
@@ -112,8 +203,12 @@ CreaBafTable<-function(indiplotdata, reportTable){
 ####4.FUNCTION for Forest Health table###########################
 
 CreaHealTable<-function(indiplotdata){
+  if (!is.element("BASAL Data",indiplotdata[21,9])){
+    test <- indiplotdata[3:26,9:12] %>% data.table
+  }else{
+    test <- indiplotdata[3:20,10:13] %>% data.table
+  }
 
-  test<-indiplotdata[3:26,9:12] %>% data.table
   names(test)<-as.character(test[1,])
   test<-test[-1,]
   test<-test[!which(apply(is.na(test),1,all)),]
@@ -126,9 +221,19 @@ CreaHealTable<-function(indiplotdata){
     test1<-subset(test1,select = -id)
 #    test1<-test1[!which(apply(is.na(test1),1,any)),]
     setnames(test1,"time","Status")
-    test2<-cbind(Opening = indiplotdata[1,3],
-                 Plotid = indiplotdata[1,9],
-                 test1)
+    if (!is.element("BASAL Data",indiplotdata[21,9])){
+
+      test2 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,9],
+                     Survey_Date = indiplotdata[1,11],
+                     test1)
+    }else{
+
+      test2 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,10],
+                     Survey_Date = indiplotdata[1,12],
+                     test1)
+    }
     test2$Count<-as.numeric(test2$Count)
   }else{
     test2<-NULL
