@@ -91,7 +91,7 @@ CreaLabel<-function(label){
 CreaAgeht <- function(indiplotdata){
   indiplotdata <- indiplotdata %>% data.table
   colnames(indiplotdata)[1] <- "Layer"
-  indiplotdata[, Layer := na.locf0(Layer, fromLast = FALSE)]
+  indiplotdata[, Layer := zoo::na.locf0(Layer, fromLast = FALSE)]
 
   over <- indiplotdata[Layer %in% "L1/L2"]
   over <- over[-c(1,2)]

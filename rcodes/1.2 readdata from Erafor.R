@@ -5,6 +5,7 @@ library(data.table)
 library(openxlsx)
 library(tidyr)
 library(splitstackshape)
+library(zoo)
 options(stringsAsFactors = FALSE)
 
 source("./rcodes/2. readdata from fft_function.R")
@@ -17,8 +18,8 @@ Erafordatapath_compiled<-file.path(datapath_compiled,"From Erafor")
 
 file_list <- dir(Erafordatapath, pattern = ".xlsx", full.names = FALSE)
 
-file_list <- file_list[-1]
-
+file_list <- file_list[substr(file_list, 1, 2) != "~$"] # remove this file
+  ## based on logic, other than position
 ####File Check##########
 
 invalid_file<-NULL
@@ -28,13 +29,12 @@ for (i in 1:length(file_list)){
   indifile <- file.path(Erafordatapath, file_list[i])
 
   cat("   File: ", file_list[i], "\n")
-
-  NoPlot <- length(getSheetNames(indifile))-2
+NoPlot <- suppressWarnings(as.numeric(getSheetNames(indifile)))
+  NoPlot <- NoPlot[!is.na(NoPlot)]
   invplot <- NULL
   vplot <- NULL
 
-  for (indiplot in 1:NoPlot){
-
+  for (indiplot in NoPlot){
     indiplotdata <- read.xlsx(indifile,
                               sheet = as.character(indiplot),
                               colNames = FALSE,
@@ -42,19 +42,29 @@ for (i in 1:length(file_list)){
 
     if(!is.na(indiplotdata[1,3])){
       if(!is.element("BASAL Data",indiplotdata[21,9])){
-        test2 <- c(indiplotdata[1:19,1] == c("Opening #:", "Spp", "L1 (T)", "L1 (W)", "L1 (F)", "L2 (T)", "L2 (W)", "L2 (F)", "L3/4 (T)", "L3/4 (W)", "L3/4 (F)", NA, "L1 Ht", "L1 Age", "L2 Ht", "L2 Age", "L3/4 Ht", "L3/4 Age", "BAF #"),
+        test2 <- c(indiplotdata[1:19,1] == c("Opening #:", "Spp", "L1 (T)", "L1 (W)",
+                                             "L1 (F)", "L2 (T)", "L2 (W)", "L2 (F)",
+                                             "L3/4 (T)", "L3/4 (W)", "L3/4 (F)", NA,
+                                             "L1 Ht", "L1 Age", "L2 Ht", "L2 Age",
+                                             "L3/4 Ht", "L3/4 Age", "BAF #"),
                    indiplotdata[1,8] == "Plot #:",
                    indiplotdata[1,10] == "Date:",
                    indiplotdata[2,9] == "FOREST HEALTH")
       }else{
-        test2 <- c(indiplotdata[1:19,1] == c("Opening #:", "Spp", "L1 (T)", "L1 (W)", "L1 (F)", "L2 (T)", "L2 (W)", "L2 (F)", "L3/4 (T)", "L3/4 (W)", "L3/4 (F)", NA, "L1 Ht", "L1 Age", "L2 Ht", "L2 Age", "L3/4 Ht", "L3/4 Age", "BAF #"),
+        test2 <- c(indiplotdata[1:19,1] == c("Opening #:", "Spp", "L1 (T)", "L1 (W)",
+                                             "L1 (F)", "L2 (T)", "L2 (W)", "L2 (F)",
+                                             "L3/4 (T)", "L3/4 (W)", "L3/4 (F)", NA,
+                                             "L1 Ht", "L1 Age", "L2 Ht", "L2 Age",
+                                             "L3/4 Ht", "L3/4 Age", "BAF #"),
                    indiplotdata[1,8] == "Plot #:",
                    indiplotdata[1,11] == "Date:",
                    indiplotdata[2,10] == "FOREST HEALTH")
       }
 
       if (is.element("FALSE",test2)){
-        invplot <- c(invplot, paste0(file_list[i], "_", indiplot))
+        invplot <- c(invplot,
+                     paste0(gsub(".xlsx", "", file_list[i]),
+                            "_sheet", indiplot))
       } else{
         vplot <- c(vplot,indiplot)
       }
@@ -75,6 +85,13 @@ if (length(invalid_file != 0)){
 }else {
   message ("all files pass file check")
 }
+## need manual check for these two sheets
+## for both the 93G045-573_2018_Recce_Plot_Data Sheet5
+## 93J004-179_2019_Recce_Plot_Data Sheet5
+## the species in row 12 is missing
+## Manually typed in Unknown for the species, need to check back
+## with the source
+
 
 ####RUN##################
 
@@ -160,8 +177,17 @@ output <- list(BafTable = BafTable,
                HealTable = HealTable,
                InvTable = InvTable)
 
-write.csv(output$BafTable,file.path(Erafordatapath_compiled,paste0("Eraforcompile_BafTable.csv")),row.names = FALSE)
-write.csv(output$HealTable,file.path(Erafordatapath_compiled,paste0("Eraforcompile_HealTable.csv")),row.names = FALSE)
-write.csv(output$InvTable,file.path(Erafordatapath_compiled,paste0("Eraforcompile_InvTable.csv")),row.names = FALSE)
+write.csv(output$BafTable,
+          file.path(Erafordatapath_compiled,
+                    paste0("Eraforcompile_BafTable.csv")),
+          row.names = FALSE)
+write.csv(output$HealTable,
+          file.path(Erafordatapath_compiled,
+                    paste0("Eraforcompile_HealTable.csv")),
+          row.names = FALSE)
+write.csv(output$InvTable,
+          file.path(Erafordatapath_compiled,
+                    paste0("Eraforcompile_InvTable.csv")),
+          row.names = FALSE)
 
 
