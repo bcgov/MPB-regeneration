@@ -19,7 +19,7 @@ Erafordatapath_compiled<-file.path(datapath_compiled,"From Erafor")
 file_list <- dir(Erafordatapath, pattern = ".xlsx", full.names = FALSE)
 
 file_list <- file_list[substr(file_list, 1, 2) != "~$"] # remove this file
-  ## based on logic, other than position
+
 ####File Check##########
 
 invalid_file<-NULL
