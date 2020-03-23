@@ -177,9 +177,13 @@ latlong <- as.data.table(read.table(file.path(Erafordatapath,"Plots information.
 
 InvTable_1 <- merge(InvTable, latlong, by.x = c("Opening","Plot"), by.y = c("OPENING_NU", "PLOT_LABEL"), all = TRUE)
 
-InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "Survey_Date", "SOURCE") := NULL]
+InvTable_1[which(is.na(InvTable_1$Survey_Date)), Survey_Date := SURVEY_DAT]
 
-gsub(" 0:00:00", "", InvTable_1$SURVEY_DAT)
+InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "SOURCE", "SURVEY_DAT") := NULL]
+
+InvTable_1$Survey_Date <- gsub(" 0:00:00", "", InvTable_1$Survey_Date)
+
+setnames(InvTable_1, "PLOT_STATU", "Plot_status")
 
 ####file save######
 
@@ -195,7 +199,7 @@ write.csv(output$HealTable,
           file.path(Erafordatapath_compiled,
                     paste0("Eraforcompile_HealTable.csv")),
           row.names = FALSE)
-write.csv(output$InvTable_1,
+write.csv(output$InvTable,
           file.path(Erafordatapath_compiled,
                     paste0("Eraforcompile_InvTable.csv")),
           row.names = FALSE)
