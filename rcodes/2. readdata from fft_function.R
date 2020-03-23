@@ -45,6 +45,8 @@ CreaCounTable <- function(indiplotdata){
 
   test3 <- test3[!is.na(test3$Count),] #remove rows that contain na
   setnames(test3,"Species","Spp")
+  test3[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
+  test3[Layer %in% c("L3", "L4", "L3/4"), Layer := "L3/L4"]
   return(test3)
 }
 
@@ -93,7 +95,12 @@ CreaAgeht <- function(indiplotdata){
   colnames(indiplotdata)[1] <- "Layer"
   indiplotdata[, Layer := zoo::na.locf0(Layer, fromLast = FALSE)]
 
-  over <- indiplotdata[Layer %in% "L1/L2"]
+  if (is.element("L2", indiplotdata$Layer)){
+    over <- indiplotdata[Layer %in% "L1"]
+  }else{
+    over <- indiplotdata[Layer %in% "L1/L2"]
+  }
+
   over <- over[-c(1,2)]
 
   colnames(over) <- c("Layer","Plot","CC","SP1","PCT1","Age1","Ht1","SP2","PCT2","Age2","Ht2","SP3","PCT3","SP4","PCT4","SP5","PCT5","SP6","PCT6")
@@ -152,6 +159,8 @@ CreaAgeht <- function(indiplotdata){
   ageht <- rbind(over,under)
   ageht <- ageht[order(ageht$Plot)]
 
+  ageht[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
+
   return(ageht)
 }
 
@@ -197,6 +206,12 @@ CreaBafTable<-function(indiplotdata){
     test3<-NULL
   }
   test3 <- test3[!is.na(test3$Count)]
+
+  if (is.data.table(test3)){
+    test3[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
+    test3[Layer %in% c("L3","L4","L3/4"), Layer := "L3/L4"]
+  }
+
   return(test3)
 }
 
@@ -246,16 +261,16 @@ CreaHealTable<-function(indiplotdata){
 save.file<-function(output,savename,saveformat){
   if (saveformat == "csv"){
     write.csv(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.csv")),row.names = FALSE)
-    write.csv(output$CounTable,file.path(fftdatapath_compiled,paste0(savename,"_countable.csv")),row.names = FALSE)
-    write.csv(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_HtAge.csv")),row.names = FALSE)
+    write.csv(output$InvTable,file.path(fftdatapath_compiled,paste0(savename,"_InvTable.csv")),row.names = FALSE)
+    write.csv(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_StandHtAge.csv")),row.names = FALSE)
     write.csv(output$BafTable,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.csv")),row.names = FALSE)
     write.csv(output$HealTable,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.csv")),row.names = FALSE)
     write.csv(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.csv")),row.names = FALSE)
   }
   if (saveformat == "rds"){
     saveRDS(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.rds")))
-    saveRDS(output$CounTable,file.path(fftdatapath_compiled,paste0(savename,"_countable.rds")))
-    saveRDS(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_HtAge.rds")))
+    saveRDS(output$InvTable,file.path(fftdatapath_compiled,paste0(savename,"_InvTable.rds")))
+    saveRDS(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_StandHtAge.rds")))
     saveRDS(output$BafTable,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.rds")))
     saveRDS(output$HealTable,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.rds")))
     saveRDS(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.rds")))

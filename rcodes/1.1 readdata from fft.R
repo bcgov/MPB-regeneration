@@ -4,6 +4,8 @@ rm(list=ls())
 library(data.table)
 library(openxlsx)
 library(tidyr)
+library(splitstackshape)
+library(zoo)
 options(stringsAsFactors = FALSE)
 
 ##load all functions
@@ -107,6 +109,7 @@ CounTable <- NULL
 HtAgeTable <- NULL
 BafTable <- NULL
 HealTable <- NULL
+InvTable <- NULL
 for (i in 1:length(file_list)){
   indifile <- file.path(fftdatapath, file_list[i])
   cat("Extract data from file", file_list[i], "\n")
@@ -186,6 +189,16 @@ for (i in 1:length(file_list)){
   HtAgeTable<-rbind(HtAgeTable,htage_all)
   cat(" Height and age table is done. \n")
 
+  ####Prepare Inventory Table to replace Count Table
+
+  indinvdata <- read.xlsx(indifile,
+                          sheet = "Inv",
+                          colNames = FALSE,
+                          detectDates = TRUE)
+  tmp_agehtdata <- CreaAgeht(indinvdata)
+  tmp_agehtdata <- cSplit(tmp_agehtdata,"Plot",sep = "&",direction = "long")
+  tmp_agehtdata$Plot <- as.character(tmp_agehtdata$Plot)
+
   ####extract 1. count table 2. baf table 3. forest health table
 
   NoPlot <- reportTable[9, 5]
@@ -203,7 +216,7 @@ for (i in 1:length(file_list)){
 
     ####2. BAF count table
 
-    tmp_bafdata <- CreaBafTable(indiplotdata,reportTable)
+    tmp_bafdata <- CreaBafTable(indiplotdata)
     BafTable <- rbind(BafTable, tmp_bafdata)
 
     cat("   BA measurement in plot", indiplot, "is done. \n")
@@ -213,8 +226,24 @@ for (i in 1:length(file_list)){
     tmp_helthdata <- CreaHealTable(indiplotdata)
     HealTable <- rbind(HealTable, tmp_helthdata)
     cat("   Health table in plot", indiplot, "is done. \n")
+
+    indiopen <- indiplotdata[1,3]
   }
-rm(tmp_countdata, tmp_helthdata, tmp_bafdata, opening_tmp,over,over_tmp,OVER,osub_sp1,osub_sp2,under,under_tmp,UNDER,usub_sp1,usub_sp2,htage_over,htage_under,htage_all,i,indifile,indiplot,indiplotdata,NoPlot,reportTable)
+
+  indiopen_countdata <- CounTable[Opening %in% indiopen]
+  tmp_invdata <- merge(tmp_agehtdata,indiopen_countdata,by.x = c("Layer","Plot","SP"), by.y = c("Layer", "Plotid","Spp"), all = TRUE)
+  setcolorder(tmp_invdata,c("Opening","Plot","Layer","CC","SP","PCT","Age","Ht","Count","Status"))
+  tmp_invdata <- tmp_invdata[order(tmp_invdata$Plot)]
+  tmp_invdata[, Opening := unique(Opening[!is.na(Opening)])]
+  tmp_invdata[, Survey_Date := unique(Survey_Date[!is.na(Survey_Date)])[1]]
+  tmp_invdata[, CC := unique(CC[!is.na(CC)]), by = c("Layer","Plot")]
+  tmp_invdata[, Status := NULL]
+
+  InvTable <- rbind(InvTable, tmp_invdata)
+
+  cat("   Inv table in opening", file_list[i], "is done. \n")
+
+  rm(tmp_countdata, tmp_helthdata, tmp_bafdata, opening_tmp,over,over_tmp,OVER,osub_sp1,osub_sp2,under,under_tmp,UNDER,usub_sp1,usub_sp2,htage_over,htage_under,htage_all,i,indifile,indiplot,indiplotdata,NoPlot,reportTable, tmp_invdata, tmp_agehtdata, indiopen_countdata)
 }
 
 ################################################################################################
@@ -224,8 +253,6 @@ rm(tmp_countdata, tmp_helthdata, tmp_bafdata, opening_tmp,over,over_tmp,OVER,osu
 ####1. calculate BA per ha by layer and species
 
 BafTable_process <- copy(BafTable)
-
-BafTable_process[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
 
 BAsummary <- BafTable_process[,.(BAF_Count = sum(Count)),
                               by = c("Opening","Layer","Spp")]
@@ -245,9 +272,6 @@ for (i in 1:dim(BAsummary)[1]){
 ####2. calculate TPH by layer and species
 
 CounTable_process <- copy(CounTable)
-
-CounTable_process[Layer %in% c("L1", "L2", "L1/2"), Layer := "L1/L2"]
-CounTable_process[Layer %in% c("L3", "L4", "L3/4"), Layer := "L3/L4"]
 
 TPHsummary <- CounTable_process[,.(TotalN = sum(Count)),
                                 by = c("Opening", "Layer", "Spp")]
@@ -276,13 +300,13 @@ rm(i,Noplot,opening,tmp,baf,size,BafTable_process,CounTable_process)
 ####save output to .csv or .rds#############################
 
 output <- list(Opening_Info = Opening_Info,
-               CounTable = CounTable,
+               InvTable = InvTable,
                HtAgeTable = HtAgeTable,
                BafTable = BafTable,
                HealTable = HealTable,
                Inventory_Sum = Inventory_Sum)
 save.file(output,
-          savename = "fftcompile_2opening",
+          savename = "fftcompile",
           saveformat = "csv")
 
 

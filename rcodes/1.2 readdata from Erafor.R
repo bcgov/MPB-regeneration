@@ -163,19 +163,29 @@ for (i in 1:length(file_list)){
   tmp_invdata[, CC := unique(CC[!is.na(CC)]), by = c("Layer","Plot")]
   tmp_invdata[, Status := NULL]
 
-
   InvTable <- rbind(InvTable, tmp_invdata)
 
   cat("   Inv table in opening", file_list[i], "is done. \n")
 
 }
 
+####Add Lat and Long information in InvTable####
+
+InvTable <- as.data.table(read.csv(file.path(Erafordatapath_compiled,"Eraforcompile_InvTable.csv"), header = TRUE))
+
+latlong <- as.data.table(read.table(file.path(Erafordatapath,"Plots information.txt"), sep = ",", header = TRUE))
+
+InvTable_1 <- merge(InvTable, latlong, by.x = c("Opening","Plot"), by.y = c("OPENING_NU", "PLOT_LABEL"), all = TRUE)
+
+InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "Survey_Date", "SOURCE") := NULL]
+
+gsub(" 0:00:00", "", InvTable_1$SURVEY_DAT)
 
 ####file save######
 
 output <- list(BafTable = BafTable,
                HealTable = HealTable,
-               InvTable = InvTable)
+               InvTable = InvTable_1)
 
 write.csv(output$BafTable,
           file.path(Erafordatapath_compiled,
@@ -185,7 +195,7 @@ write.csv(output$HealTable,
           file.path(Erafordatapath_compiled,
                     paste0("Eraforcompile_HealTable.csv")),
           row.names = FALSE)
-write.csv(output$InvTable,
+write.csv(output$InvTable_1,
           file.path(Erafordatapath_compiled,
                     paste0("Eraforcompile_InvTable.csv")),
           row.names = FALSE)
