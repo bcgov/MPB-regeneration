@@ -1,5 +1,4 @@
 ####Data from Erafor
-
 rm(list=ls())
 library(data.table)
 library(openxlsx)
@@ -29,7 +28,7 @@ for (i in 1:length(file_list)){
   indifile <- file.path(Erafordatapath, file_list[i])
 
   cat("   File: ", file_list[i], "\n")
-NoPlot <- suppressWarnings(as.numeric(getSheetNames(indifile)))
+  NoPlot <- suppressWarnings(as.numeric(getSheetNames(indifile)))
   NoPlot <- NoPlot[!is.na(NoPlot)]
   invplot <- NULL
   vplot <- NULL
@@ -92,29 +91,21 @@ if (length(invalid_file != 0)){
 ## Manually typed in Unknown for the species, need to check back
 ## with the source
 
-
+#########################
 ####RUN##################
+#########################
 
 CounTable <- NULL
 AgeHtTable <- NULL
 BafTable <- NULL
 HealTable <- NULL
-InvTable <- NULL
 for (i in 1:length(file_list)){
   indifile <- file.path(Erafordatapath,file_list[i])
   cat("Extract data from file", file_list[i], "\n")
 
   NoPlot <- length(getSheetNames(indifile))-2
 
-  indinvdata <- read.xlsx(indifile,
-                           sheet = "Inv",
-                           colNames = FALSE,
-                           detectDates = TRUE)
-  tmp_agehtdata <- CreaAgeht(indinvdata)
-  tmp_agehtdata <- cSplit(tmp_agehtdata,"Plot",sep = "&",direction = "long")
-  tmp_agehtdata$Plot <- as.character(tmp_agehtdata$Plot)
-  cat("  Age & Ht Table in opening", file_list[i], "is done. \n")
-
+  cat("Extracting data from opening", file_list[i], "\n")
 
   for (indiplot in 1:NoPlot) {
 
@@ -126,64 +117,75 @@ for (i in 1:length(file_list)){
 
     if(!is.na(indiplotdata[1,3]) & is.element("BAF #", indiplotdata[19,1])){
 
-        ####1. count table
+      ####1. count table
 
-        tmp_countdata <- CreaCounTable(indiplotdata)
-        tmp_countdata[Layer %in% c("L1", "L2", "L1/2"), Layer := "L1/L2"]
-        tmp_countdata[Layer %in% c("L3", "L4", "L3/4"), Layer := "L3/L4"]
-        CounTable <- rbind(CounTable,tmp_countdata[tmp_countdata$Status=="T",])
+      tmp_countdata <- CreaCounTable(indiplotdata)
+      CounTable <- rbind(CounTable, tmp_countdata[Status %in% "T"])
 
+      cat("    Count table in plot", indiplot, "is done. \n")
 
-        cat("    Count table in plot", indiplot, "is done. \n")
+      ####2. Age-Ht table
 
-        ####2. BAF count table
+      tmp_agehtdata <- CreaAgeHtTable(indiplotdata)
+      AgeHtTable <-rbind(AgeHtTable, tmp_agehtdata)
 
-        tmp_bafdata <- CreaBafTable(indiplotdata)
-        BafTable <- rbind(BafTable, tmp_bafdata)
+      cat("  Age & Ht Table in plot", indiplot, "is done. \n")
 
-        cat("    BA measurement in plot", indiplot, "is done. \n")
+      ####3. BAF count table
 
-        ####3. Forest health table
+      tmp_bafdata <- CreaBafTable(indiplotdata)
+      BafTable <- rbind(BafTable, tmp_bafdata)
 
-        tmp_helthdata <- CreaHealTable(indiplotdata)
-        HealTable <- rbind(HealTable, tmp_helthdata)
-        cat("    Health table in plot", indiplot, "is done. \n")
+      cat("    BA measurement in plot", indiplot, "is done. \n")
 
-        indiopen <- indiplotdata[1,3]
+      ####4. Forest health table
+
+      tmp_helthdata <- CreaHealTable(indiplotdata)
+      HealTable <- rbind(HealTable, tmp_helthdata)
+      cat("    Health table in plot", indiplot,  "is done. \n")
+
     }
   }
-
-
-  indiopen_countdata <- CounTable[Opening %in% indiopen]
-  tmp_invdata <- merge(tmp_agehtdata,indiopen_countdata,by.x = c("Layer","Plot","SP"), by.y = c("Layer", "Plotid","Spp"), all = TRUE)
-  setcolorder(tmp_invdata,c("Opening","Plot","Layer","CC","SP","PCT","Age","Ht","Count","Status"))
-  tmp_invdata <- tmp_invdata[order(tmp_invdata$Plot)]
-  tmp_invdata[, Opening := unique(Opening[!is.na(Opening)])]
-  tmp_invdata[, Survey_Date := unique(Survey_Date[!is.na(Survey_Date)])[1]]
-  tmp_invdata[, CC := unique(CC[!is.na(CC)]), by = c("Layer","Plot")]
-  tmp_invdata[, Status := NULL]
-
-  InvTable <- rbind(InvTable, tmp_invdata)
-
-  cat("   Inv table in opening", file_list[i], "is done. \n")
-
+  cat("Data extraction for opening", file_list[i], "is finished. \n")
 }
 
-####Add Lat and Long information in InvTable####
 
-InvTable <- as.data.table(read.csv(file.path(Erafordatapath_compiled,"Eraforcompile_InvTable.csv"), header = TRUE))
+
+####5. combine count table and age-ht table together to create an inventory table
+
+InvTable <- merge(CounTable,AgeHtTable, by.x = c("Opening","Plotid","Layer","Spp"), by.y = c("Opening","Plotid","Layer","Species"), all = TRUE)
+InvTable[,Status := NULL]
+setnames(InvTable,"Plotid","Plot")
+setnames(InvTable,"Spp","SP")
+setcolorder(InvTable,c("Opening","Plot","Layer","SP","Age","Ht","Count"))
+
+####Add Lat and Long information in InvTable####
 
 latlong <- as.data.table(read.table(file.path(Erafordatapath,"Plots information.txt"), sep = ",", header = TRUE))
 
 InvTable_1 <- merge(InvTable, latlong, by.x = c("Opening","Plot"), by.y = c("OPENING_NU", "PLOT_LABEL"), all = TRUE)
 
-InvTable_1[which(is.na(InvTable_1$Survey_Date)), Survey_Date := SURVEY_DAT]
+InvTable_1$SURVEY_DAT <- gsub(" 0:00:00", "", InvTable_1$SURVEY_DAT)
+InvTable_1 <- separate(InvTable_1,
+                       col = SURVEY_DAT,
+                       into = "SURVEY_DATE",
+                       sep = "/",
+                       extra = "drop")
 
-InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "SOURCE", "SURVEY_DAT") := NULL]
+InvTable_1[SURVEY_DATE %in% "1899", SURVEY_DATE := Survey_Date]
+InvTable_1[SURVEY_DATE %in% "", SURVEY_DATE := Survey_Date]
+InvTable_1[which(is.na(InvTable_1$SURVEY_DATE)), SURVEY_DATE := Survey_Date]
+InvTable_1 <- separate(InvTable_1,
+                       col = SURVEY_DATE,
+                       into = "SURVEY_DATE",
+                       sep = "-",
+                       extra = "drop")
+InvTable_1[SURVEY_DATE %in% "18/06/18", SURVEY_DATE := "2018"]
+InvTable_1[SURVEY_DATE %in% NA, SURVEY_DATE := "2018"]
 
-InvTable_1$Survey_Date <- gsub(" 0:00:00", "", InvTable_1$Survey_Date)
-
+InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "SOURCE", "Survey_Date") := NULL]
 setnames(InvTable_1, "PLOT_STATU", "Plot_status")
+setnames(InvTable_1, "SURVEY_DATE", "Survey_Date")
 
 ####file save######
 
@@ -203,5 +205,3 @@ write.csv(output$InvTable,
           file.path(Erafordatapath_compiled,
                     paste0("Eraforcompile_InvTable.csv")),
           row.names = FALSE)
-
-
