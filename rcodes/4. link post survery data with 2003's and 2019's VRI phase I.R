@@ -1,7 +1,7 @@
 rm(list=ls())
 library(data.table)
 library(dplyr)
-invdata_2003 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_2003.txt", sep = ",", header = TRUE))
+invdata_2003 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_VRI2003.txt", sep = ",", header = TRUE))
 
 ##VRI 2003 data cleaning
 
@@ -77,7 +77,7 @@ inv_post2003_com <- relocate(inv_post2003_com, Count, .before = Stand_SI)
 
 ##VRI 2019 data cleaning
 
-invdata_2019 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_2019.txt", sep = ",", header = TRUE))
+invdata_2019 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_VRI2019.txt", sep = ",", header = TRUE))
 
 inv2019_SP1 <- data.table(Opening = invdata_2019$Opening,
                           Plot = invdata_2019$Plot,
