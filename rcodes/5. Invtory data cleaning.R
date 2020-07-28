@@ -199,41 +199,35 @@ invdata2 <- data.table()
 for (i in Nplot){
   tmp <- InvStand[PlotNum %in% i]
   tmptree <- InvTree[PlotNum %in% i & Status %in% "Regen"]
-  tmptree2 <- InvTree[PlotNum %in% i & Status %in% "Post-survey"]
   if(is.element("PL", tmptree$SP)){
     pct <- tmptree[SP %in% "PL", PCT]
     tph <- tmptree2[SP %in% "PL", TPH]
     tmp[,':='(PL = 1,
-              PL_PCT = pct,
-              PL_psTPH = tph)]
+              PL_PCT = pct)]
   }
   if(is.element("S", tmptree$SP)){
     pct <- tmptree[SP %in% "S", PCT]
     tph <- tmptree2[SP %in% "S", TPH]
     tmp[,':='(S = 1,
-              S_PCT = pct,
-              S_psTPH = tph)]
+              S_PCT = pct)]
   }
   if(is.element("B", tmptree$SP)){
     pct <- tmptree[SP %in% "B", PCT]
     tph <- tmptree2[SP %in% "B", TPH]
     tmp[,':='(B = 1,
-              B_PCT = pct,
-              B_psTPH = tph)]
+              B_PCT = pct)]
   }
   if(is.element("F", tmptree$SP)){
     pct <- tmptree[SP %in% "F", PCT]
     tph <- tmptree2[SP %in% "B", TPH]
     tmp[,':='(F = 1,
-              F_PCT = pct,
-              B_psTPH = tph)]
+              F_PCT = pct)]
   }
   if(is.element("AT", tmptree$SP)|is.element("AC", tmptree$SP)|is.element("E", tmptree$SP)){
     pct <- tmptree[SP %in% "AC"|SP %in% "AT"|SP %in% "AE", sum(PCT, na.rm = TRUE)]
     tph <- tmptree2[SP %in% "AC"|SP %in% "AT"|SP %in% "AE", sum(TPH, na.rm = TRUE)]
     tmp[,':='(HW = 1,
-              HW_PCT = pct,
-              HW_psTPH = tph)]
+              HW_PCT = pct)]
   }
 
   invdata2 <- rbind(invdata2, tmp, fill = TRUE)
@@ -252,11 +246,6 @@ invdata2[B %in% "0", B_PCT := 0]
 invdata2[F %in% "0", F_PCT := 0]
 invdata2[HW %in% "0", HW_PCT := 0]
 
-invdata2[PL %in% "0", PL_TPH := 0]
-invdata2[S %in% "0", S_TPH := 0]
-invdata2[B %in% "0", B_TPH := 0]
-invdata2[F %in% "0", F_TPH := 0]
-invdata2[HW %in% "0", HW_TPH := 0]
 
 write.csv(invdata2,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvStand.csv", row.names = FALSE)
 
