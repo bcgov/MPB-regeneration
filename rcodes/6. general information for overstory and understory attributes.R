@@ -6,6 +6,12 @@ library(ggplot2)
 InvTree <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTree.csv"))
 InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvStand.csv"))
 
+##remove non-regeneration plots in InvTree and InvStand
+
+n <- InvStand[Regen %in% "0", PlotNum]
+InvStand <- InvStand[Regen %in% "1"]
+InvTree <- InvTree[!PlotNum %in% n]
+
 ##set color for species
 
 SPcolor <- data.table(PL = "#56B4E9",
@@ -33,7 +39,7 @@ SBSmkStand_Pine[, mean(TPH_R,na.rm = TRUE)]
 SBSmkStand_Pine[, range(TPH_R,na.rm = TRUE)]
 #[1] 200 9200
 
-#SBSmkStand_Pine[,sqrt(var(TPH_R, na.rm = TRUE))]
+SBSmkStand_Pine[,sqrt(var(TPH_R, na.rm = TRUE))]
 #[1] 1651.565
 
 #Plot species combination
@@ -77,7 +83,7 @@ setorder(data,-N)
 
 #density, age, height of regeneration
 
-SBSmkTree_Pine[Status %in% "Regen", sum(TPH, na.rm = TRUE)/105, by = SP]
+SBSmkTree_Pine[Status %in% "Regen", sum(TPH, na.rm = TRUE)/101, by = SP]
 SBSmkTree_Pine[Status %in% "Regen", range(TPH, na.rm = TRUE), by = SP]
 SBSmkTree_Pine[Status %in% "Regen", mean(Age, na.rm = TRUE), by = SP]
 SBSmkTree_Pine[Status %in% "Regen", range(Age, na.rm = TRUE), by = SP]
@@ -122,7 +128,7 @@ SBSdwStand_Pine[, mean(TPH_R,na.rm = TRUE)]
 SBSdwStand_Pine[, range(TPH_R,na.rm = TRUE)]
 #[1] 200 12600
 
-#SBSdwStand_Pine[,sqrt(var(TPH_R))]
+SBSdwStand_Pine[,sqrt(var(TPH_R))]
 #[1] 2156.784
 
 #Plot species composition
@@ -158,7 +164,7 @@ SBSdw_spcomp2019 <- ggplot(data = SBSdwTree_Pine[Status %in% "Post-survey"])+
 
 #density, age, height of regeneration
 
-SBSdwTree_Pine[Status %in% "Regen", sum(TPH, na.rm = TRUE)/94, by = SP]
+SBSdwTree_Pine[Status %in% "Regen", sum(TPH, na.rm = TRUE)/83, by = SP]
 SBSdwTree_Pine[Status %in% "Regen", range(TPH, na.rm = TRUE), by = SP]
 SBSdwTree_Pine[Status %in% "Regen", mean(Age, na.rm = TRUE), by = SP]
 SBSdwTree_Pine[Status %in% "Regen", range(Age, na.rm = TRUE), by = SP]
@@ -206,9 +212,3 @@ test <- ggplot(data = f)+
   labs(title = "Post-survey canopy versus regeneration species composition (SBSdw)", x = "Status", y = "PCT by stems tallied")+
   theme(panel.background = element_blank(),
         panel.grid = element_blank())
-
-
-write.csv(SBSmkTree_Pine, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/SBSmkTree_Pine.csv", row.names = FALSE)
-write.csv(SBSmkStand_Pine, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/SBSmkStand_Pine.csv", row.names = FALSE)
-write.csv(SBSdwTree_Pine, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/SBSdwTree_Pine.csv", row.names = FALSE)
-write.csv(SBSdwStand_Pine, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/SBSdwStand_Pine.csv", row.names = FALSE)
