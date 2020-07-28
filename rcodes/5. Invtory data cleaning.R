@@ -101,10 +101,10 @@ invdata[Status %in% "Post-survey",Stand_TPH := sum(Count, na.rm = TRUE)*200, by 
 ##MPB killed percentage
 
 mean(invdata$Kill_PCT, na.rm = TRUE)
-[1] 50.57673
+#[1] 50.57673
 
 range(invdata$Kill_PCT, na.rm = TRUE)
-[1]  7 96
+#[1]  7 96
 
 ##Add overstory BA per ha from post survey data
 
