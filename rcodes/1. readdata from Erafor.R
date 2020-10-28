@@ -7,7 +7,7 @@ library(splitstackshape)
 library(zoo)
 options(stringsAsFactors = FALSE)
 
-source("./rcodes/2. readdata from fft_function.R")
+source("./rcodes/2. readdata from Erafor_function.R")
 
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
 datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
