@@ -3,7 +3,7 @@ library(data.table)
 library(quickPlot)
 library(ggplot2)
 
-InvTree <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTree.csv"))
+InvTree <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv"))
 InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvStand.csv"))
 
 ##remove non-regeneration plots in InvTree and InvStand

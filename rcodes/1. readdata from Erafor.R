@@ -1,13 +1,15 @@
 ####Data from Erafor
+
 rm(list=ls())
 library(data.table)
 library(openxlsx)
 library(tidyr)
 library(splitstackshape)
 library(zoo)
+library(dplyr)
 options(stringsAsFactors = FALSE)
 
-source("./rcodes/2. readdata from Erafor_function.R")
+source("./rcodes/1.2. readdata from Erafor_function.R")
 
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
 datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
@@ -85,11 +87,9 @@ if (length(invalid_file != 0)){
   message ("all files pass file check")
 }
 ## need manual check for these two sheets
-## for both the 93G045-573_2018_Recce_Plot_Data Sheet5
-## 93J004-179_2019_Recce_Plot_Data Sheet5
-## the species in row 12 is missing
-## Manually typed in Unknown for the species, need to check back
-## with the source
+## for both the 93G045-573_2018_Recce_Plot_Data Sheet5 (DONE, has been modified: Sx was added for the live stem tallied)
+## 93J004-179_2019_Recce_Plot_Data Sheet5 (No live species tallied, below ##RUN## has been modified to roll that sheet out)
+
 
 #########################
 ####RUN##################
@@ -103,11 +103,12 @@ for (i in 1:length(file_list)){
   indifile <- file.path(Erafordatapath,file_list[i])
   cat("Extract data from file", file_list[i], "\n")
 
-  NoPlot <- length(getSheetNames(indifile))-2
+  NoPlot <- suppressWarnings(as.numeric(getSheetNames(indifile)))
+  NoPlot <- NoPlot[!is.na(NoPlot)]
 
   cat("Extracting data from opening", file_list[i], "\n")
 
-  for (indiplot in 1:NoPlot) {
+  for (indiplot in NoPlot) {
 
     indiplotdata <- read.xlsx(indifile,
                               sheet = as.character(indiplot),
@@ -159,6 +160,15 @@ setnames(InvTable,"Plotid","Plot")
 setnames(InvTable,"Spp","SP")
 setcolorder(InvTable,c("Opening","Plot","Layer","SP","Age","Ht","Count"))
 
+####6. combine invtable with baftable 2020.12.11
+##### Species labeled as "Missing" in dead layer in baftable change to be "Pli"
+##### COrrection: the same species in the same layer should be added together in baftable
+
+BafTable[Spp %in% "Missing", Spp := "Pli"]
+BafTable <- BafTable[,.(Prismcount = sum(Count)), by= .(Opening, Plotid, Spp, Layer, BAF)]
+
+InvTable <- merge(InvTable, BafTable, by.x = c("Opening", "Plot", "Layer", "SP"), by.y = c("Opening", "Plotid", "Layer", "Spp"), all = TRUE)
+
 ####Add Lat and Long information in InvTable####
 
 latlong <- as.data.table(read.table(file.path(Erafordatapath,"Plots information.txt"), sep = ",", header = TRUE))
@@ -181,27 +191,29 @@ InvTable_1 <- separate(InvTable_1,
                        sep = "-",
                        extra = "drop")
 InvTable_1[SURVEY_DATE %in% "18/06/18", SURVEY_DATE := "2018"]
-InvTable_1[SURVEY_DATE %in% NA, SURVEY_DATE := "2018"]
 
-InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "SOURCE", "Survey_Date") := NULL]
+####fill NA value in SURVEY_DATE
+
+opening <- InvTable_1[is.na(SURVEY_DATE), unique(Opening)]
+test <- distinct(InvTable_1[Opening %in% opening, .(Opening, SURVEY_DATE)])
+test <- test[!is.na(test$SURVEY_DATE)]
+test1 <- InvTable_1[is.na(SURVEY_DATE), .(Opening, SURVEY_DATE)]
+test1 <- merge(test1, test, by = "Opening")
+InvTable_1[is.na(SURVEY_DATE), SURVEY_DATE := test1$SURVEY_DATE.y]
+
+InvTable_1[,c("FID", "OBJECTID", "OPENING_ID", "SURVEY_TYP", "SOURCE", "Survey_Date", "Plot_status") := NULL]
 setnames(InvTable_1, "PLOT_STATU", "Plot_status")
 setnames(InvTable_1, "SURVEY_DATE", "Survey_Date")
 
 ####file save######
 
-output <- list(BafTable = BafTable,
-               HealTable = HealTable,
-               InvTable = InvTable_1)
+write.csv(HealTable,
+          file.path(Erafordatapath_compiled,
+                    "Eraforcompile_HealTable.csv"),
+          row.names = FALSE)
+write.csv(InvTable_1,
+          file.path(Erafordatapath_compiled,
+                    "Eraforcompile_InvTable.csv"),
+          row.names = FALSE)
 
-write.csv(output$BafTable,
-          file.path(Erafordatapath_compiled,
-                    paste0("Eraforcompile_BafTable.csv")),
-          row.names = FALSE)
-write.csv(output$HealTable,
-          file.path(Erafordatapath_compiled,
-                    paste0("Eraforcompile_HealTable.csv")),
-          row.names = FALSE)
-write.csv(output$InvTable,
-          file.path(Erafordatapath_compiled,
-                    paste0("Eraforcompile_InvTable.csv")),
-          row.names = FALSE)
+

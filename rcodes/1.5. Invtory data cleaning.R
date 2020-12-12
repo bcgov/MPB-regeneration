@@ -57,7 +57,7 @@ invdata_BEC[, .N, by = BEC_sub_all]
 
 ##ALL SP comp before MPB (year 2003)
 
-data <- tmpdata[Status %in% "2003",.(SP = paste(SP,PCT)),by= PlotNum]
+data <- invdata[Status %in% "2003",.(SP = paste(SP,PCT)),by= PlotNum]
 data[, SPcomp := Reduce(paste, SP), by=PlotNum]
 data[,SP := NULL]
 data <- unique(data)
@@ -65,38 +65,42 @@ data <- data[, .N, by = SPcomp]
 setorder(data,-N)
 
 #Divide the Invdata into two files
-#1. tree level
+#1. tree level #NOTE: BA is ba/ha
 
-InvTree <- invdata[,.(Opening, Plot,PlotNum, Status, Inventory_Standard, BEC, BEC_sub_all, SP, PCT, Age, Ht, Count)]
+InvTree <- invdata[,.(Opening, Plot,PlotNum, Status, Inventory_Standard, BEC, BEC_sub_all, SP, PCT, Age, Ht, Count, BAF, Prismcount, Stand_BA)]
 
-tree2003 <- InvTree[Status %in% "2003",.(Status = "2003", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA), by=.(PlotNum,SP)]
-tree2019 <- InvTree[Status %in% "2019",.(Status = "2019", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA), by=.(PlotNum,SP)]
-treeps <- InvTree[Status %in% "Post-survey",.(Status = "Post-survey", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE)), by=.(PlotNum,SP)]
+tree2003 <- InvTree[Status %in% "2003",.(Status = "2003", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA, BAPH = NA), by=.(PlotNum,SP)]
+tree2019 <- InvTree[Status %in% "2019",.(Status = "2019", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA, BAPH = Stand_BA * PCT/100), by=.(PlotNum,SP)]
+treeps <- InvTree[Status %in% "Post-survey",.(Status = "Post-survey", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAPH = BAF*Prismcount), by=.(PlotNum,SP)]
 treeps[Age %in% NaN, Age := NA]
 treeps[Ht %in% NaN, Ht := NA]
-treeregen <- InvTree[Status %in% "Regen",.(Status = "Regen", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE)), by=.(PlotNum,SP)]
+treeregen <- InvTree[Status %in% "Regen",.(Status = "Regen", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAPH = NA), by=.(PlotNum,SP)]
 treeregen[Age %in% NaN, Age := NA]
 treeregen[Ht %in% NaN, Ht := NA]
 
 invtree <- rbind(tree2003,tree2019,treeps,treeregen)
-stand <- unique(InvTree[,.(PlotNum, BEC, BEC_sub_all)])
+stand <- unique(InvTree[,.(PlotNum, BEC_sub_all)])
 InvTree <- merge(stand, invtree, by = "PlotNum")
 
 
 InvTree[Count %in% "0", Count := NA]
 InvTree[,TPH := Count *200]
 
-InvTree[Status %in% "Post-survey", PCT := 100*Count/sum(Count, na.rm = TRUE), by = PlotNum]
-InvTree[Status %in% "Regen", PCT := 100*Count/sum(Count, na.rm = TRUE), by = PlotNum]
+InvTree[Status %in% "Post-survey", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = PlotNum]
+InvTree[Status %in% "Regen", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = PlotNum]
 
-write.csv(InvTree,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTree.csv", row.names = FALSE)
+write.csv(InvTree,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv", row.names = FALSE)
 
 #2. stand level
 
-##Calculate regeneration density for each plot (3.99m radius)
+##Calculate density for each post-survey plot (3.99m radius)
 
 invdata[Status %in% "Regen",Stand_TPH := sum(Count, na.rm = TRUE)*200, by = PlotNum]
 invdata[Status %in% "Post-survey",Stand_TPH := sum(Count, na.rm = TRUE)*200, by = PlotNum]
+
+##Calculate ba per ha for each post-survey plot
+
+invdata[Status %in% "Post-survey",Stand_BA := sum(BAF*Prismcount, na.rm = TRUE), by = PlotNum]
 
 ##MPB killed percentage
 
@@ -106,26 +110,15 @@ mean(invdata$Kill_PCT, na.rm = TRUE)
 range(invdata$Kill_PCT, na.rm = TRUE)
 #[1]  7 96
 
-##Add overstory BA per ha from post survey data
 
-bafdata <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Eraforcompile_BafTable.csv"))
+Invstand <- distinct(invdata[,.(PlotNum, Status, Inventory_Standard, BEC_sub_all, Stand_SI, Stand_CC, Stand_QMD125, Stand_TPH, Stand_BA, Stand_VOL125, Survey_Date, Dist_year, Kill_PCT)])
+Invstand <- Invstand[!Status %in% "Dead"]
 
-bafdata <- bafdata[Layer %in% "L1/L2"]
-bafdata <- bafdata[,.(BA = sum(Count)*5),by = .(Opening,Plotid)]
+write.csv(Invstand,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly.csv", row.names = FALSE)
 
-for (i in unique(invdata$PlotNum)){
-  tmp <- invdata[PlotNum %in% i & Status %in% "Post-survey"]
-  opening <- unique(tmp[,Opening])
-  plot <- unique(tmp[,Plot])
-  ba <- bafdata[Opening %in% opening & Plotid %in% plot, BA]
-  if(length(ba) != 0){
-    invdata[PlotNum %in% i & Status %in% "Post-survey", Stand_BA := ba]
-  }
-}
-
+####THE FOLLOWING CODES CONVERT INVSTAND TABLE FROM LONG TABLE TO WIDE TABLE
 
 InvStand <- data.table()
-
 for (i in unique(invdata$PlotNum)){
   tmp <- invdata[PlotNum %in% i]
   opening <- unique(tmp$Opening)
@@ -188,8 +181,6 @@ setnames(InvStand, "Ht", "Ht_2003")
 
 InvStand[is.na(TPH_R), Regen := 0]
 InvStand[!is.na(TPH_R), Regen := 1]
-
-write.csv(InvStand,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvStand.csv", row.names = FALSE)
 
 ##invTable update
 ##Add dummy variable for the presence or absense of each species

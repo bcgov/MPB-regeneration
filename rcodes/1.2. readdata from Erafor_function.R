@@ -1,5 +1,6 @@
 #############################################################
 ####FUNCTIONS################################################
+
 ####1. FUNCTION for creating count table#####################
 
 CreaCounTable <- function(indiplotdata){
@@ -50,7 +51,7 @@ CreaCounTable <- function(indiplotdata){
   return(test3)
 }
 
-####2 FUNCTION for extracting age and ht###############################
+####2. FUNCTION for extracting age and ht###############################
 
 CreaAgeHtTable <- function(indiplotdata){
   test <- indiplotdata[12:18,1:8] %>% data.table
@@ -91,7 +92,100 @@ CreaAgeHtTable <- function(indiplotdata){
   return(test4)
 }
 
-####2.1 FUNCTION for extracting overstory and understory label##############################
+
+####3.FUNCTION for creating BAF count table#########################
+
+CreaBafTable<-function(indiplotdata){
+
+  test <- indiplotdata[19:20,1:8] %>% data.table
+  names(test) <- as.character(test[1,])
+  setnames(test,"BAF #","BAF")
+  test<-test[-1,]
+  test[is.na(test$BAF),BAF := 5]
+  test[,which(apply(is.na(test),2,all)) := NULL]
+  if (dim(test)[2] > 1){
+    test1<-reshape(test,
+                   varying = 2:dim(test)[2],
+                   v.names = "Count",
+                   times=names(test)[2:dim(test)[2]],
+                   direction="long") #reshape to long table##
+    test2<-separate(test1,
+                    col = "time",
+                    into = c("Spp","Layer"),
+                    sep = " ",
+                    fill = "left")
+    test2<-subset(test2,select = -id)
+    if (!is.element("BASAL Data",indiplotdata[21,9])){
+
+      test3 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,9],
+                     Survey_Date = indiplotdata[1,11],
+                     test2)
+    }else{
+
+      test3 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,10],
+                     Survey_Date = indiplotdata[1,12],
+                     test2)
+    }
+    test3$Count<-as.numeric(test3$Count)
+    test3[is.na(test3$Spp), Spp := "Missing"]
+  }else{
+    test3<-NULL
+  }
+  test3 <- test3[!is.na(test3$Count)]
+
+  if (is.data.table(test3)){
+    test3[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
+    test3[Layer %in% c("L3","L4","L3/4"), Layer := "L3/L4"]
+  }
+
+  return(test3)
+}
+
+####4.FUNCTION for Forest Health table###########################
+
+CreaHealTable<-function(indiplotdata){
+  if (!is.element("BASAL Data",indiplotdata[21,9])){
+    test <- indiplotdata[3:26,9:12] %>% data.table
+  }else{
+    test <- indiplotdata[3:20,10:13] %>% data.table
+  }
+
+  names(test)<-as.character(test[1,])
+  test<-test[-1,]
+  test<-test[!which(apply(is.na(test),1,all)),]
+  if (dim(test)[1] != 0 ){
+    test1<-reshape(test,
+                   varying = 3:4,
+                   v.names = "Count",
+                   times=names(test)[3:4],
+                   direction="long") #reshape to long table##
+    test1<-subset(test1,select = -id)
+#    test1<-test1[!which(apply(is.na(test1),1,any)),]
+    setnames(test1,"time","Status")
+    if (!is.element("BASAL Data",indiplotdata[21,9])){
+
+      test2 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,9],
+                     Survey_Date = indiplotdata[1,11],
+                     test1)
+    }else{
+
+      test2 <- cbind(Opening = indiplotdata[1,3],
+                     Plotid = indiplotdata[1,10],
+                     Survey_Date = indiplotdata[1,12],
+                     test1)
+    }
+    test2$Count<-as.numeric(test2$Count)
+  }else{
+    test2<-NULL
+  }
+  return(test2)
+}
+
+
+########2.1 FUNCTION for extracting overstory and understory label##############################
 ####ht and age are coming from the overtory and understory label
 ####site index (SI), crown closure (CC) and TPH in the OPENING INFORMATION TABLE are coming from the overstory and understory lable
 # CreaLabel<-function(label){
@@ -204,120 +298,27 @@ CreaAgeHtTable <- function(indiplotdata){
 #   return(ageht)
 # }
 
-
-####3.FUNCTION for creating BAF count table#########################
-
-CreaBafTable<-function(indiplotdata){
-
-  test <- indiplotdata[19:20,1:8] %>% data.table
-  names(test) <- as.character(test[1,])
-  setnames(test,"BAF #","BAF")
-  test<-test[-1,]
-  test[is.na(test$BAF),BAF := 5]
-  test[,which(apply(is.na(test),2,all)) := NULL]
-  if (dim(test)[2] > 1){
-    test1<-reshape(test,
-                   varying = 2:dim(test)[2],
-                   v.names = "Count",
-                   times=names(test)[2:dim(test)[2]],
-                   direction="long") #reshape to long table##
-    test2<-separate(test1,
-                    col = "time",
-                    into = c("Spp","Layer"),
-                    sep = " ",
-                    fill = "left")
-    test2<-subset(test2,select = -id)
-    if (!is.element("BASAL Data",indiplotdata[21,9])){
-
-      test3 <- cbind(Opening = indiplotdata[1,3],
-                     Plotid = indiplotdata[1,9],
-                     Survey_Date = indiplotdata[1,11],
-                     test2)
-    }else{
-
-      test3 <- cbind(Opening = indiplotdata[1,3],
-                     Plotid = indiplotdata[1,10],
-                     Survey_Date = indiplotdata[1,12],
-                     test2)
-    }
-    test3$Count<-as.numeric(test3$Count)
-    test3[is.na(test3$Spp), Spp := "Missing"]
-  }else{
-    test3<-NULL
-  }
-  test3 <- test3[!is.na(test3$Count)]
-
-  if (is.data.table(test3)){
-    test3[Layer %in% c("L1","L2","L1/2"), Layer := "L1/L2"]
-    test3[Layer %in% c("L3","L4","L3/4"), Layer := "L3/L4"]
-  }
-
-  return(test3)
-}
-
-####4.FUNCTION for Forest Health table###########################
-
-CreaHealTable<-function(indiplotdata){
-  if (!is.element("BASAL Data",indiplotdata[21,9])){
-    test <- indiplotdata[3:26,9:12] %>% data.table
-  }else{
-    test <- indiplotdata[3:20,10:13] %>% data.table
-  }
-
-  names(test)<-as.character(test[1,])
-  test<-test[-1,]
-  test<-test[!which(apply(is.na(test),1,all)),]
-  if (dim(test)[1] != 0 ){
-    test1<-reshape(test,
-                   varying = 3:4,
-                   v.names = "Count",
-                   times=names(test)[3:4],
-                   direction="long") #reshape to long table##
-    test1<-subset(test1,select = -id)
-#    test1<-test1[!which(apply(is.na(test1),1,any)),]
-    setnames(test1,"time","Status")
-    if (!is.element("BASAL Data",indiplotdata[21,9])){
-
-      test2 <- cbind(Opening = indiplotdata[1,3],
-                     Plotid = indiplotdata[1,9],
-                     Survey_Date = indiplotdata[1,11],
-                     test1)
-    }else{
-
-      test2 <- cbind(Opening = indiplotdata[1,3],
-                     Plotid = indiplotdata[1,10],
-                     Survey_Date = indiplotdata[1,12],
-                     test1)
-    }
-    test2$Count<-as.numeric(test2$Count)
-  }else{
-    test2<-NULL
-  }
-  return(test2)
-}
-
 ####5. FUNCTION for file saving#####################
-
-save.file<-function(output,savename,saveformat){
-  if (saveformat == "csv"){
-    write.csv(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.csv")),row.names = FALSE)
-    write.csv(output$InvTable,file.path(fftdatapath_compiled,paste0(savename,"_InvTable.csv")),row.names = FALSE)
-    write.csv(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_StandHtAge.csv")),row.names = FALSE)
-    write.csv(output$BafTable,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.csv")),row.names = FALSE)
-    write.csv(output$HealTable,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.csv")),row.names = FALSE)
-    write.csv(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.csv")),row.names = FALSE)
-  }
-  if (saveformat == "rds"){
-    saveRDS(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.rds")))
-    saveRDS(output$InvTable,file.path(fftdatapath_compiled,paste0(savename,"_InvTable.rds")))
-    saveRDS(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_StandHtAge.rds")))
-    saveRDS(output$BafTable,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.rds")))
-    saveRDS(output$HealTable,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.rds")))
-    saveRDS(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.rds")))
-  }
-}
-
-
+#
+# save.file<-function(output,savename,saveformat){
+#   if (saveformat == "csv"){
+#     write.csv(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.csv")),row.names = FALSE)
+#     write.csv(output$InvTable,file.path(fftdatapath_compiled,paste0(savename,"_InvTable.csv")),row.names = FALSE)
+#     write.csv(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_StandHtAge.csv")),row.names = FALSE)
+#     write.csv(output$BafTable,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.csv")),row.names = FALSE)
+#     write.csv(output$HealTable,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.csv")),row.names = FALSE)
+#     write.csv(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.csv")),row.names = FALSE)
+#   }
+#   if (saveformat == "rds"){
+#     saveRDS(output$Opening_Info,file.path(fftdatapath_compiled,paste0(savename,"_opening_info.rds")))
+#     saveRDS(output$InvTable,file.path(fftdatapath_compiled,paste0(savename,"_InvTable.rds")))
+#     saveRDS(output$HtAgeTable,file.path(fftdatapath_compiled,paste0(savename,"_StandHtAge.rds")))
+#     saveRDS(output$BafTable,file.path(fftdatapath_compiled,paste0(savename,"_BafTable.rds")))
+#     saveRDS(output$HealTable,file.path(fftdatapath_compiled,paste0(savename,"_HealTable.rds")))
+#     saveRDS(output$Inventory_Sum,file.path(fftdatapath_compiled,paste0(savename,"_Inv_Sum.rds")))
+#   }
+# }
+#
 
 
 
