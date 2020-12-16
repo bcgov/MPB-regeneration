@@ -2,24 +2,21 @@ rm(list=ls())
 library(data.table)
 library(tidyr)
 library(reshape2)
+library(dplyr)
 
 invdata <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_post0319.csv"))
 
-##Assign a new plot number for each plot in each opening
+##only retain plot that have regeneration information ("Regen" in the Status column)
 
-Plot <- unique(invdata[,c("Opening", "Plot")])
-for ( i in 1:241){
-  opening <- Plot[i]$Opening
-  plot <- Plot[i]$Plot
-  invdata[Opening %in% opening & Plot %in% plot, PlotNum := i]
-}
+regenplot <- invdata[Status %in% "Regen", unique(PlotNum)]
+invdata <- invdata[PlotNum %in% regenplot]
 
 ##Unify SP code and merge small species group into their general group (SP0 spcs)
 
 unique(invdata$SP)
 
-# [1] "PL"  "PLI" "SX"  "Pli" "Sb"  "Sx"  "SW"  "SB"  "At"  "AT"  "Ep"  "Bl"  "FDI" "Fdi" "FD"
-# [16] "Ac"  "BL"  "X2" "" "EP"  "S"   "AC"  "SXW"
+# [1] "PL"  "PLI" "SX"  "Pli" "Sb"  "Sx"  "SW"  "SB"  "AT"  "Ep"  "At"  "Bl"  "FDI" "Fdi" "FD"  " "   "X2"
+#[18] "BL"  "Ac"  "AC"  "EP"  "S"
 
 invdata[SP %in% c("PL","PLI","Pli","X2"),SP := "PL"]
 invdata[SP %in% c("SX","Sx","S","SW","SB","SXW","Sb"),SP := "S"]
@@ -29,31 +26,36 @@ invdata[SP %in% c("Bl","BL"),SP := "B"]
 invdata[SP %in% c("FDI","Fdi","FD"),SP := "F"]
 invdata[SP %in% c("Ac","AC"),SP := "AC"]
 
-rmplot <- invdata[SP %in% "", unique(PlotNum)]
-invdata <- invdata[!PlotNum %in% rmplot]
+rmplot <- invdata[SP %in% " ", unique(PlotNum)]
+invdata[PlotNum %in% rmplot]
+invdata[SP %in% " ", SP := "UNKNOWN"]
 
 unique(invdata$SP)
 
-# "PL" "S"  "AT" "E"  "B"  "F"  "AC"
-
-##remove plot that do not have regeneration information (no "Regen" in the Status column)
-
-## regenplot <- invdata[Status %in% "Regen", unique(PlotNum)]
-##
-## invdata <- invdata[PlotNum %in% regenplot]
+# "PL"  "S" "AT"  "E" "B"   "F" "UNKNOWN" "AC"
 
 ##How many plots in each BEC & subBEC combination?
 
-invdata[,BEC_sub_all := paste0(BEC,subBEC)]
-invdata_BEC <- unique(invdata[,.(PlotNum,BEC_sub_all)])
-invdata_BEC[, .N, by = BEC_sub_all]
+unique(invdata$vaBEC)
+#[1]  3  2 NA  1
 
-# #  BEC_sub_all   N
-# 1:       SBSmc   8
-# 2:       SBSdw 110
-# 3:       SBSmw   3
-# 4:      SBPSdc   4
-# 5:       SBSmk 111
+class(invdata$vaBEC)
+invdata$vaBEC <- as.character(invdata$vaBEC)
+
+invdata[vaBEC %in% NA, vaBEC := ""]
+
+invdata[,BEC_sub_va := paste0(BEC,subBEC, vaBEC)]
+invdata_BEC <- distinct(invdata[,.(PlotNum,BEC_sub_va)])
+invdata_BEC[, .N, by = BEC_sub_va]
+
+#    BEC_sub_va   N
+# 1:     SBSmc3   3
+# 2:     SBSdw2 133
+# 3:      SBSmw   5
+# 4:     SBSmc2   4
+# 5:     SBPSdc   4
+# 6:     SBSdw3  35
+# 7:     SBSmk1 111
 
 ##ALL SP comp before MPB (year 2003)
 
@@ -64,10 +66,69 @@ data <- unique(data)
 data <- data[, .N, by = SPcomp]
 setorder(data,-N)
 
+data
+#               SPcomp   N
+# 1:            PL 100 144
+# 2:        PL 90 S 10  32
+# 3:        PL 95 AT 5  21
+# 4:        PL 70 S 30   8
+# 5:       PL 90 AT 10   7
+# 8:  PL 80 S 10 AT 10   5
+# 9:    PL 90 AT 5 S 5   4
+# 10:   PL 85 AT 10 S 5   4
+# 12:        PL 80 S 20   3
+# 14:         PL 95 S 5   3
+# 15:   PL 75 S 20 AT 5   3
+# 16:  PL 70 S 20 AT 10   3
+# 17:       PL 80 AT 20   3
+# 19:        PL 89 S 11   2
+# 21:   PL 85 S 10 AT 5   2
+# 22:    PL 90 S 5 AT 5   2
+# 23:  PL 70 AT 20 S 10   2
+# 26:  PL 80 AT 10 S 10   2
+# 30:   PL 70 F 20 S 10   1
+# 32:   PL 70 S 20 F 10   1
+# 35:   PL 71 S 21 AT 8   1
+# 36:        PL 85 S 15   1
+# 43:   PL 80 S 10 F 10   1
+
+# 44: PL 55 AT 30 AC 15   1
+# 24:       PL 50 AT 50   2
+# 25:       AT 60 PL 40   2
+# 42:       AT 90 PL 10   1
+
+# 6:  PL 60 AT 30 S 10   5
+# 11:  AT 50 PL 30 S 20   4
+# 13:  PL 60 S 30 AT 10   3
+# 33:    S 90 PL 5 AT 5   1
+# 37:  PL 60 S 20 AT 20   1
+# 39:  S 70 PL 20 AC 10   1
+
+# 7:   S 40 F 30 PL 25   5
+# 29:   F 50 PL 30 S 20   1
+# 31:    F 55 S 38 PL 7   1
+
+# 45:   S 40 PL 40 B 10   1
+
+# 46:         S 80 B 20   1
+
+# 18:        S 70 PL 30   2
+# 20:        PL 69 S 31   2
+# 27:        PL 60 S 40   1
+# 28:        S 60 PL 40   1
+# 34:   PL 60 S 30 S 10   1
+
+# 38:             F 100   1
+
+# 40:   S 70 PL 20 E 10   1
+
+# 41:  AC 60 S 20 AT 20   1
+
+
 #Divide the Invdata into two files
 #1. tree level #NOTE: BA is ba/ha
 
-InvTree <- invdata[,.(Opening, Plot,PlotNum, Status, Inventory_Standard, BEC, BEC_sub_all, SP, PCT, Age, Ht, Count, BAF, Prismcount, Stand_BA)]
+InvTree <- invdata[,.(Opening, Plot,PlotNum, Status, Inventory_Standard, BEC, BEC_sub_va, SP, PCT, Age, Ht, Count, BAF, Prismcount, Stand_BA)]
 
 tree2003 <- InvTree[Status %in% "2003",.(Status = "2003", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA, BAPH = NA), by=.(PlotNum,SP)]
 tree2019 <- InvTree[Status %in% "2019",.(Status = "2019", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA, BAPH = Stand_BA * PCT/100), by=.(PlotNum,SP)]
@@ -77,17 +138,15 @@ treeps[Ht %in% NaN, Ht := NA]
 treeregen <- InvTree[Status %in% "Regen",.(Status = "Regen", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAPH = NA), by=.(PlotNum,SP)]
 treeregen[Age %in% NaN, Age := NA]
 treeregen[Ht %in% NaN, Ht := NA]
+treedead <- InvTree[Status %in% "Dead",.(Status = "Dead", PCT = 100, Age = NA, Ht = NA, Count = NA, BAPH = BAF*Prismcount), by=.(PlotNum,SP)]
 
-invtree <- rbind(tree2003,tree2019,treeps,treeregen)
-stand <- unique(InvTree[,.(PlotNum, BEC_sub_all)])
-InvTree <- merge(stand, invtree, by = "PlotNum")
+invtree <- rbind(tree2003,tree2019,treeps,treedead,treeregen)
 
+invtree[,TPH := Count *200]
 
-InvTree[Count %in% "0", Count := NA]
-InvTree[,TPH := Count *200]
-
-InvTree[Status %in% "Post-survey", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = PlotNum]
-InvTree[Status %in% "Regen", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = PlotNum]
+invtree[Status %in% "Post-survey", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = PlotNum]
+invtree[Status %in% "Regen", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = PlotNum]
+setorder(invtree, PlotNum)
 
 write.csv(InvTree,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv", row.names = FALSE)
 
@@ -101,18 +160,10 @@ invdata[Status %in% "Post-survey",Stand_TPH := sum(Count, na.rm = TRUE)*200, by 
 ##Calculate ba per ha for each post-survey plot
 
 invdata[Status %in% "Post-survey",Stand_BA := sum(BAF*Prismcount, na.rm = TRUE), by = PlotNum]
-
-##MPB killed percentage
-
-mean(invdata$Kill_PCT, na.rm = TRUE)
-#[1] 50.57673
-
-range(invdata$Kill_PCT, na.rm = TRUE)
-#[1]  7 96
+invdata[Status %in% "Dead",Stand_BA := sum(BAF*Prismcount, na.rm = TRUE), by = PlotNum]
 
 
-Invstand <- distinct(invdata[,.(PlotNum, Status, Inventory_Standard, BEC_sub_all, Stand_SI, Stand_CC, Stand_QMD125, Stand_TPH, Stand_BA, Stand_VOL125, Survey_Date, Dist_year, Kill_PCT)])
-Invstand <- Invstand[!Status %in% "Dead"]
+Invstand <- distinct(invdata[,.(PlotNum, Status, Inventory_Standard, BEC, BEC_sub_va, Stand_SI, Stand_CC, Stand_QMD125, Stand_TPH, Stand_BA, Stand_VOL125, Survey_Date, Dist_year, Kill_PCT)])
 
 write.csv(Invstand,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly.csv", row.names = FALSE)
 

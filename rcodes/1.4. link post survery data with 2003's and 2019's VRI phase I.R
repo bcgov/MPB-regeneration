@@ -1,6 +1,7 @@
 rm(list=ls())
 library(data.table)
 library(dplyr)
+library(tidyr)
 invdata_2003 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_VRI2003.txt", sep = ",", header = TRUE))
 
 ##VRI 2003 data cleaning
@@ -61,7 +62,7 @@ setorder(inv2003, Opening, Plot)
 
 invdata <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Eraforcompile_InvTable_bcalbers.csv",header = TRUE))
 
-invdata[,c("Plot_status","GPSlat","GPSlong","Long","Lat") := NULL]
+invdata[,c("GPSlat","GPSlong","Long","Lat") := NULL]
 
 invdata[Layer %in% "L1/L2", Layer := "Post-survey"]
 invdata[Layer %in% "L3/L4", Layer := "Regen"]
@@ -85,6 +86,7 @@ inv2019_SP1 <- data.table(Opening = invdata_2019$Opening,
                           Inventory_Standard = "V",
                           BEC = invdata_2019$BEC_ZONE_C,
                           subBEC = invdata_2019$BEC_SUBZON,
+                          vaBEC = invdata_2019$BEC_VARIAN,
                           SP = invdata_2019$SPECIES_CD,
                           PCT = invdata_2019$SPECIES_PC,
                           Age = invdata_2019$PROJ_AGE_1,
@@ -105,6 +107,7 @@ inv2019_SP2 <- data.table(Opening = invdata_2019$Opening,
                           Inventory_Standard = "V",
                           BEC = invdata_2019$BEC_ZONE_C,
                           subBEC = invdata_2019$BEC_SUBZON,
+                          vaBEC = invdata_2019$BEC_VARIAN,
                           SP = invdata_2019$SPECIES__1,
                           PCT = invdata_2019$SPECIES__2,
                           Age = invdata_2019$PROJ_AGE_2,
@@ -127,6 +130,7 @@ inv2019_SP3 <- data.table(Opening = invdata_2019$Opening,
                           Inventory_Standard = "V",
                           BEC = invdata_2019$BEC_ZONE_C,
                           subBEC = invdata_2019$BEC_SUBZON,
+                          vaBEC = invdata_2019$BEC_VARIAN,
                           SP = invdata_2019$SPECIES__3,
                           PCT = invdata_2019$SPECIES__4,
                           Age = 0,
@@ -149,6 +153,7 @@ inv2019_SP4 <- data.table(Opening = invdata_2019$Opening,
                           Inventory_Standard = "V",
                           BEC = invdata_2019$BEC_ZONE_C,
                           subBEC = invdata_2019$BEC_SUBZON,
+                          vaBEC = invdata_2019$BEC_VARIAN,
                           SP = invdata_2019$SPECIES__5,
                           PCT = invdata_2019$SPECIES__6,
                           Age = 0,
@@ -171,6 +176,7 @@ inv2019_SP5 <- data.table(Opening = invdata_2019$Opening,
                           Inventory_Standard = "V",
                           BEC = invdata_2019$BEC_ZONE_C,
                           subBEC = invdata_2019$BEC_SUBZON,
+                          vaBEC = invdata_2019$BEC_VARIAN,
                           SP = invdata_2019$SPECIES__7,
                           PCT = invdata_2019$SPECIES__8,
                           Age = 0,
@@ -195,35 +201,28 @@ setorder(inv2019, Opening, Plot)
 inv_allyr <- rbind(inv_post2003_com,inv2019, fill = TRUE)
 setorder(inv_allyr, Opening, Plot, Status)
 
-##Remove all plots which disturbance type shown in year 2019 is not "IBM" and add BEC for all rows
+##Assign a new plot number for each plot in each opening
 
-test <- inv_allyr[Status %in% "2019" & Dist_Type %in% "IBM", c("Opening", "Plot")]
+plotn <- distinct(inv_allyr[, .(Opening, Plot)])
+plotn[, PlotNum := 1:326]
+inv_allyr <- merge(inv_allyr, plotn, by = c("Opening", "Plot"), all.x = TRUE)
 
-test <- unique(test)
+##add BEC for all rows
 
-sub_inv_allyr <- NULL
-for ( i in 1:dim(test)[1]){
-  opening <- test$Opening[i]
-  plot <- test$Plot[i]
-  sub <- inv_allyr[Opening %in% opening & Plot %in% plot]
-  bec <- sub[Status %in% "2019",unique(BEC)]
-  subbec <- sub[Status %in% "2019",unique(subBEC)]
-  sub$BEC <- bec
-  sub$subBEC <- subbec
-  sub_inv_allyr <- rbind(sub_inv_allyr, sub)
-  rm(sub, bec, subbec)
-}
+bec <- distinct(inv_allyr[Status %in% "2019", .(PlotNum, BEC, subBEC, vaBEC)])
+inv_allyr[, c("BEC", "subBEC", "vaBEC") := NULL]
+inv_allyr <- merge(inv_allyr, bec, by = "PlotNum", all.x = TRUE)
 
-sub_inv_allyr <- relocate(sub_inv_allyr,BEC, subBEC, .before = SP)
+inv_allyr <- relocate(inv_allyr,BEC, subBEC, vaBEC, .before = SP)
 
-sub_inv_allyr <- separate(data = sub_inv_allyr,
-                          col = Dist_year,
-                          into = "Dist_year",
-                          sep = "-",
-                          extra = "drop")
+inv_allyr <- separate(data = inv_allyr,
+                      col = Dist_year,
+                      into = "Dist_year",
+                      sep = "-",
+                      extra = "drop")
 
 
-write.csv(sub_inv_allyr,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_post0319.csv", row.names = FALSE, na = "")
+write.csv(inv_allyr,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvTable_post0319.csv", row.names = FALSE, na = "")
 
 
 
