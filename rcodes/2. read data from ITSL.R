@@ -17,7 +17,7 @@ datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration
 ITSLdatapath <- file.path(datapath, "ITSL")
 ITSLdatapath_compiled<-file.path(datapath_compiled,"ITSL")
 
-ITSLdata <- data.table(read.xlsx(file.path(ITSLdatapath, "BCTS ITSL summary TOR 2020-12-04ch.xlsx"),
+ITSLdata <- data.table(read.xlsx(file.path(ITSLdatapath, "BCTS ITSL summary TOR 2020-12-15ch.xlsx"),
                                  sheet = "Scrape",
                                  detectDates = TRUE))
 
@@ -32,24 +32,31 @@ ITSLdata <- data.table(read.xlsx(file.path(ITSLdatapath, "BCTS ITSL summary TOR 
 ##BAF
 ##nonpine ba/ha, dead pine ba/ha, live pine ba/ha
 
+idlocation <- ITSLdata[,.(TSA,
+                          Location,
+                          License,
+                          Block,
+                          id = 1:dim(ITSLdata)[1])]
+
+
 ITSL_poly <- ITSLdata[,.(id = 1:dim(ITSLdata)[1],
                          SurveyDate = Survey.date,
                          TSA,
                          Location,
                          Lat = `Latitude.(DD)`,
                          Long = `Longitude.(DD)`,
-                         Area = Survey.Area,
+                         Area = round(as.numeric(Survey.Area), digits = 1),
                          BEC,
                          PliSI = Pli.SI,
-                         PCTnonPba = `%.Estimated.non.pine.conifers.by.basal.area`,
-                         PCTPliKillba = `%.Pli.attack.by.basal.area`,
+                         PCTnonPba = round(`%.Estimated.non.pine.conifers.by.basal.area`, digits = 0),
+                         PCTPliKillba = as.numeric(`%.Pli.attack.by.basal.area`),
                          BAF,
                          TF = 200,
                          NPlots = Plots,
                          NPlidead = `#.Pli.dead`,
-                         nonPliba = BA.non.Pli,
-                         DeadPliba = BA.Pli.Dead,
-                         LivePliba = BA.Pli.Live)]
+                         nonPliba = round(BA.non.Pli, digits = 2),
+                         DeadPliba = round(BA.Pli.Dead, digits = 2),
+                         LivePliba = round(BA.Pli.Live, digits = 2))]
 
 ###convert gps lat long to bcalbers
 
@@ -72,6 +79,25 @@ bcalbers <- data.frame(pointmap_convert@coords)
 setnames(ITSL_poly,"Lat","GPSlat")
 setnames(ITSL_poly,"Long","GPSlong")
 ITSL_poly <- cbind(ITSL_poly, bcalbers)
+
+###remove site series from BEC zone
+
+ITSL_poly <- separate(data = ITSL_poly,
+                      col = BEC,
+                      into = "BEC",
+                      sep = "-",
+                      extra = "drop")
+
+###retain only "year" in survey date
+
+ITSL_poly <- separate(data = ITSL_poly,
+                      col = SurveyDate,
+                      into = "SurveyDate",
+                      sep = "-",
+                      extra = "drop")
+unique(ITSL_poly$SurveyDate)
+ITSL_poly[SurveyDate %in% "11//06/2018", SurveyDate := "2018"]
+ITSL_poly[SurveyDate %in% "24/07/2017", SurveyDate := "2017"]
 
 write.csv(ITSL_poly,file.path(ITSLdatapath_compiled, "ITSL_poly.csv"), row.names = FALSE)
 
@@ -128,6 +154,8 @@ ITSL_layer <- melt(data = ITSL_layer,
                    value.name = c("TT", "TC", "CC"),
                    variable.factor = FALSE)
 
+
+write.csv(ITSL_layer,file.path(ITSLdatapath_compiled, "ITSL_layer.csv"), row.names = FALSE)
 
 ###2. ITSL_layer_sp
 
@@ -198,6 +226,7 @@ ITSL_layer_sp <- ITSLdata[,.(id = 1:dim(ITSLdata)[1],
                              L4sp4ht = INVL4Sp4ht)]
 
 ###convert wide table to long table
+
 # L1 <- ITSL_layer_sp[,c(1,grep("L1", names(ITSL_layer_sp))), with = FALSE]
 # L1_sp <- NULL
 # for ( i in unique(L1$id)){
@@ -288,29 +317,83 @@ layer_sp <- merge(layer_sp, sptable, by = c("id", "Layer", "spn"), all.x = TRUE)
 layer_sp <- merge(layer_sp, pcttable, by = c("id", "Layer", "spn"), all.x = TRUE)
 layer_sp <- merge(layer_sp, agetable, by = c("id", "Layer", "spn"), all.x = TRUE)
 layer_sp <- merge(layer_sp, httable, by = c("id", "Layer", "spn"), all.x = TRUE)
+layer_sp[,spn := NULL]
 
 
+###remove unvalid species
+
+unique(layer_sp$SP)
+
+#[1] "Fdi"  "0"    "Pli"  "Sx"   "Bl"   "Act"  "Ep"   "At"   NA     "Pli " "Bl "  "Cw"   "Fdi " "Ac"   "Pl"   "BL"
+#[17] "At "  "Pa"   "Sx "  " Fdi" "80"   "20"   "sx"   "SX"   "Hw"   "Se"   "AT"
+
+layer_sp <- layer_sp[!SP %in% 0]
+layer_sp <- layer_sp[!SP %in% NA]
 
 
+###unify species code
 
+# "Fdi" "Fdi " " Fdi"
+# "Pli" "Pli " "Pl"
+# "Sx"  "Sx "  "sx" "SX"
+# "Bl"  "Bl " "BL"
+#"Act"
+# "Ep"
+# "At" "At " "AT"
+# "Cw"
+# "Ac"
+# "Pa"
+# "Hw"
+# "Se"
 
+#"80"   "20"
 
+layer_sp[SP %in% c("Fdi", "Fdi ", " Fdi"), SP := "F"]
+layer_sp[SP %in% c("Pli", "Pli ", "Pl"), SP := "PL"]
+layer_sp[SP %in% c("Sx",  "Sx ",  "sx", "SX"), SP := "S"]
+layer_sp[SP %in% c("Bl",  "Bl ", "BL"), SP := "B"]
+layer_sp[SP %in% "Act", SP := "AC"]
+layer_sp[SP %in% "Ep", SP := "E"]
+layer_sp[SP %in% c("At", "At ", "AT"), SP := "AT"]
+layer_sp[SP %in% "Cw", SP := "C"]
+layer_sp[SP %in% "Ac", SP := "AC"]
+layer_sp[SP %in% "Pa", SP := "PA"]
+layer_sp[SP %in% "Hw", SP := "H"]
+layer_sp[SP %in% "Se", SP := "S"]
 
+### check if there are duplicate species in one layer
 
+unidlayer <- distinct(layer_sp[,.(id, Layer)])
+dupsp <- NULL
+uniqsp <- NULL
+for( i in 1:dim(unidlayer)[1]){
+  d <- unidlayer[i,id]
+  layer <- unidlayer[i, Layer]
 
+  sp <- layer_sp[id %in% d & Layer %in% layer, SP]
+  if(length(sp)>length(unique(sp))){
+    dupsp_tmp <- data.table(id = d, Layer = layer)
+    dupsp <- rbind(dupsp, dupsp_tmp)
+  }else{
+    uniqsp_tmp <- data.table(id = d, Layer = layer)
+    uniqsp <- rbind(uniqsp, uniqsp_tmp)
+  }
+  cat("id", d, "Layer", layer, "is done")
+}
 
+#dupsp
+#    id Layer
+#1: 666   4
 
+layer_sp[id %in% 666 & Layer %in% 4]
+idlocation[id %in% 666]
 
+#             TSA    Location  License Block  id
+#1: Williams Lake Palmer Lake 45X-1542    51 666
 
+layer_sp <- layer_sp[!c(id %in% 666 & PCT %in% 0)]
 
-
-
-
-
-
-
-
-
+write.csv(layer_sp,file.path(ITSLdatapath_compiled, "ITSL_layer_sp.csv"), row.names = FALSE)
 
 
 
