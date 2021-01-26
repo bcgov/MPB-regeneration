@@ -128,17 +128,17 @@ data
 #Divide the Invdata into two files
 #1. tree level #NOTE: BA is ba/ha
 
-InvTree <- invdata[,.(Opening, Plot,PlotNum, Status, Inventory_Standard, BEC, BEC_sub_va, SP, PCT, Age, Ht, Count, BAF, Prismcount, Stand_BA)]
+InvTree <- invdata[,.(Opening, Plot,PlotNum, Status, Inventory_Standard, BEC, BEC_sub_va, SP, PCT, Age, Ht, Count)]
 
-tree2003 <- InvTree[Status %in% "2003",.(Status = "2003", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA, BAPH = NA), by=.(PlotNum,SP)]
-tree2019 <- InvTree[Status %in% "2019",.(Status = "2019", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA, BAPH = Stand_BA * PCT/100), by=.(PlotNum,SP)]
-treeps <- InvTree[Status %in% "Post-survey",.(Status = "Post-survey", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAPH = BAF*Prismcount), by=.(PlotNum,SP)]
+tree2003 <- InvTree[Status %in% "2003",.(Status = "2003", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA), by=.(PlotNum,SP)]
+tree2019 <- InvTree[Status %in% "2019",.(Status = "2019", PCT = sum(PCT), Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = NA), by=.(PlotNum,SP)]
+treeps <- InvTree[Status %in% "Post-survey",.(Status = "Post-survey", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE)), by=.(PlotNum,SP)]
 treeps[Age %in% NaN, Age := NA]
 treeps[Ht %in% NaN, Ht := NA]
-treeregen <- InvTree[Status %in% "Regen",.(Status = "Regen", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAPH = NA), by=.(PlotNum,SP)]
+treeregen <- InvTree[Status %in% "Regen",.(Status = "Regen", PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE)), by=.(PlotNum,SP)]
 treeregen[Age %in% NaN, Age := NA]
 treeregen[Ht %in% NaN, Ht := NA]
-treedead <- InvTree[Status %in% "Dead",.(Status = "Dead", PCT = 100, Age = NA, Ht = NA, Count = NA, BAPH = BAF*Prismcount), by=.(PlotNum,SP)]
+treedead <- InvTree[Status %in% "Dead",.(Status = "Dead", PCT = 100, Age = NA, Ht = NA, Count = NA), by=.(PlotNum,SP)]
 
 invtree <- rbind(tree2003,tree2019,treeps,treedead,treeregen)
 
