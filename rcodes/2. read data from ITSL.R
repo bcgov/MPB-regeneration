@@ -17,7 +17,7 @@ datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration
 ITSLdatapath <- file.path(datapath, "ITSL")
 ITSLdatapath_compiled<-file.path(datapath_compiled,"ITSL")
 
-ITSLdata <- data.table(read.xlsx(file.path(ITSLdatapath, "BCTS ITSL summary TOR 2020-12-15ch.xlsx"),
+ITSLdata <- data.table(read.xlsx(file.path(ITSLdatapath, "BCTS ITSL summary TOR 2020-12-16ch.xlsx"),
                                  sheet = "Scrape",
                                  detectDates = TRUE))
 
@@ -319,6 +319,7 @@ layer_sp <- merge(layer_sp, agetable, by = c("id", "Layer", "spn"), all.x = TRUE
 layer_sp <- merge(layer_sp, httable, by = c("id", "Layer", "spn"), all.x = TRUE)
 layer_sp[,spn := NULL]
 
+layer_sp$PCT <- round(layer_sp$PCT, digits = 1)
 
 ###remove unvalid species
 
@@ -333,24 +334,22 @@ layer_sp <- layer_sp[!SP %in% NA]
 
 ###unify species code
 
-# "Fdi" "Fdi " " Fdi"
-# "Pli" "Pli " "Pl"
-# "Sx"  "Sx "  "sx" "SX"
-# "Bl"  "Bl " "BL"
-#"Act"
+# "Fdi"  " Fdi"  "Fdi "
+# "Pli"  "Pli "  "Pl"
+# "Sx"   "Sx "   "SX"
+# "Bl"    "Bl "  "BL"
+# "Act"
 # "Ep"
-# "At" "At " "AT"
+# "At"  "At "  "AT"
 # "Cw"
 # "Ac"
 # "Pa"
 # "Hw"
 # "Se"
 
-#"80"   "20"
-
 layer_sp[SP %in% c("Fdi", "Fdi ", " Fdi"), SP := "F"]
 layer_sp[SP %in% c("Pli", "Pli ", "Pl"), SP := "PL"]
-layer_sp[SP %in% c("Sx",  "Sx ",  "sx", "SX"), SP := "S"]
+layer_sp[SP %in% c("Sx",  "Sx ", "SX"), SP := "S"]
 layer_sp[SP %in% c("Bl",  "Bl ", "BL"), SP := "B"]
 layer_sp[SP %in% "Act", SP := "AC"]
 layer_sp[SP %in% "Ep", SP := "E"]
@@ -378,8 +377,10 @@ for( i in 1:dim(unidlayer)[1]){
     uniqsp_tmp <- data.table(id = d, Layer = layer)
     uniqsp <- rbind(uniqsp, uniqsp_tmp)
   }
-  cat("id", d, "Layer", layer, "is done")
+  cat("id", d, "Layer", layer, "is done \n")
 }
+
+dupsp
 
 #dupsp
 #    id Layer
