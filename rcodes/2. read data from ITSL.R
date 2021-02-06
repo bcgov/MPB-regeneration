@@ -395,6 +395,7 @@ idlocation[id %in% 666]
 layer_sp <- layer_sp[!c(id %in% 666 & PCT %in% 0)]
 
 write.csv(layer_sp,file.path(ITSLdatapath_compiled, "ITSL_layer_sp.csv"), row.names = FALSE)
+write.csv(ITSL_poly,file.path(ITSLdatapath_compiled, "ITSL_poly.csv"), row.names = FALSE)
 
 
 

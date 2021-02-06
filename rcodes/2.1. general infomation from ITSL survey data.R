@@ -58,7 +58,6 @@ ITSL_poly[,.N, by = TSA]
 # 5:         Lillooet  32
 # 6:    Williams Lake 115
 
-write.csv(ITSL_poly,file.path(ITSLdatapath_compiled, "ITSL_poly.csv"), row.names = FALSE)
 
 
 
