@@ -9,7 +9,7 @@ library(zoo)
 library(dplyr)
 options(stringsAsFactors = FALSE)
 
-source("./rcodes/1.2. readdata from Erafor_function.R")
+source("./rcodes/1.1 readdata from Erafor_function.R")
 
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
 datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
@@ -160,11 +160,20 @@ setnames(InvTable,"Plotid","Plot")
 setnames(InvTable,"Spp","SP")
 setcolorder(InvTable,c("Opening","Plot","Layer","SP","Age","Ht","Count"))
 
-####6. combine invtable with baftable 2020.12.11
+####6. combine invtable with baftable 2020.Dec.11
+### Correction: check the raw data to correct the uncorrect lables ("SxL1" and "X3") in Layer column
+
+unique(BafTable$Layer)
+#[1] "Dead"  "L1/L2" "SxL1"  "X3"
+
+BafTable[Layer %in% "SxL1", Spp := "SX"]
+BafTable[Layer %in% "SxL1", Layer := "L1/L2"]
+BafTable <- BafTable[!Layer %in% "X3"]
+
 ##### Species labeled as "Missing" in dead layer in baftable change to be "Pli"
 ##### COrrection: the same species in the same layer should be added together in baftable
 
-BafTable[Spp %in% "Missing", Spp := "Pli"]
+BafTable[Spp %in% "Missing" & Layer %in% "Dead", Spp := "Pli"]
 BafTable <- BafTable[,.(Prismcount = sum(Count)), by= .(Opening, Plotid, Spp, Layer, BAF)]
 
 InvTable <- merge(InvTable, BafTable, by.x = c("Opening", "Plot", "Layer", "SP"), by.y = c("Opening", "Plotid", "Layer", "Spp"), all = TRUE)
