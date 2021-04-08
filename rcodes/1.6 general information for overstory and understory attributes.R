@@ -12,6 +12,35 @@ InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp
 # InvStand <- InvStand[Regen %in% "1"]
 # InvTree <- InvTree[!PlotNum %in% n]
 
+#Add SP0 for all plots?
+
+for (i in 1:dim(InvTree)[1]){
+  if(InvTree[i, SP] == "PL"){
+    InvTree[i, SP0 := "PL"]
+  }
+  if(InvTree[i, SP] == "SB"|InvTree[i, SP] == "SX"|InvTree[i, SP] == "SW"|InvTree[i, SP] == "S"){
+    InvTree[i, SP0 := "S"]
+  }
+  if(InvTree[i, SP] == "AT"){
+    InvTree[i, SP0 := "AT"]
+  }
+  if(InvTree[i, SP] == "EP"){
+    InvTree[i, SP0 := "E"]
+  }
+  if(InvTree[i, SP] == "BL"){
+    InvTree[i, SP0 := "B"]
+  }
+  if(InvTree[i, SP] == "FD"){
+    InvTree[i, SP0 := "F"]
+  }
+  if(InvTree[i, SP] == "AC"){
+    InvTree[i, SP0 := "AC"]
+  }
+  if(InvTree[i, SP] == "UNK"){
+    InvTree[i, SP0 := "UNK"]
+  }
+}
+
 ##set color for species
 
 SPcolor <- data.table(PL = "#56B4E9",
