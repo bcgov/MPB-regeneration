@@ -161,7 +161,7 @@ setnames(InvTable,"Spp","SP")
 setcolorder(InvTable,c("Opening","Plot","Layer","SP","Age","Ht","Count"))
 
 ####6. combine invtable with baftable 2020.Dec.11
-### Correction: check the raw data to correct the uncorrect lables ("SxL1" and "X3") in Layer column
+### Correction: check the raw data to correct the uncorrect labels ("SxL1" and "X3") in Layer column
 
 unique(BafTable$Layer)
 #[1] "Dead"  "L1/L2" "SxL1"  "X3"
