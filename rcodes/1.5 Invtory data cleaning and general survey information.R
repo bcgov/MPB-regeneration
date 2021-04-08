@@ -6,6 +6,18 @@ library(dplyr)
 
 invdata <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Eraforcompile_InvTable_VRI0319.csv"))
 
+##Remove plots dont have post survey information (some plots has GPS record but no survey record)
+
+tmp <- invdata[,.(unique(Layer)),by = PlotNum]
+plt <- NULL
+for (i in unique(tmp$PlotNum)){
+  layers <- tmp[PlotNum %in% i, V1]
+  if(is.element("L1/L2", layers)|is.element("L3/L4", layers)|is.element("Dead", layers)){
+    plt <- c(plt,i)
+  }
+}
+invdata <- invdata[PlotNum %in% plt]
+
 ##only retain plot that have regeneration information ("L3/L4" in the Layer column)
 
 #regenplot <- invdata[Layer %in% "L3/L4", unique(PlotNum)]
@@ -15,8 +27,8 @@ invdata <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/
 
 unique(invdata$SP)
 
-# [1] "PL"  "PLI" "SX"  "Pli" "Sb"  "Sx"  "SW"  "SB"  "AT"  "Ep"  "At"  "Bl"  "FDI" "Fdi" "FD"  " "   "X2"  "BL"  "Ac"
-# [20] ""    "AC"  "EP"  "S"   "SXW"
+# [1] "PL"  "Pli" "Sb"  "Sx"  "PLI" "SX"  "SW"  "SB"  "AT"  "Ep"  "At"  "Bl"  "FDI" "Fdi" "FD"  " "   "X2"  "BL"  "Ac"  "AC"  "EP"  "S"
+# [23] "SXW"
 
 invdata[SP %in% c("PL","PLI","Pli"),SP := "PL"]
 invdata[SP %in% c("SX","Sx", "SXW"),SP := "SX"]
@@ -26,7 +38,7 @@ invdata[SP %in% c("EP","Ep"),SP := "EP"]
 invdata[SP %in% c("Bl","BL"),SP := "BL"]
 invdata[SP %in% c("FDI","Fdi","FD"),SP := "FD"]
 invdata[SP %in% c("Ac","AC"),SP := "AC"]
-invdata[SP %in% c(""," "),SP := "UNK"]
+invdata[SP %in% " ",SP := "UNK"]
 
 ##What is "X2"?
 ##check from raw data :93G044-158 Plot K1 & 93G045-570 Plot K1: "X2" should be "PL"
@@ -48,14 +60,14 @@ invdata[,BEC_sub_va := paste0(BEC,subBEC, vaBEC)]
 invdata_BEC <- distinct(invdata[,.(PlotNum,BEC_sub_va)])
 invdata_BEC[, .N, by = BEC_sub_va]
 
-#    BEC_sub_va   N
+# BEC_sub_va   N
 # 1:     SBSmc3   3
-# 2:     SBSdw2 133
-# 3:      SBSmw   5
-# 4:     SBSmc2   4
+# 2:     SBSdw2 144
+# 3:      SBSmw   6
+# 4:     SBSmc2   5
 # 5:     SBPSdc   4
-# 6:     SBSdw3  35
-# 7:     SBSmk1 111
+# 6:     SBSdw3  41
+# 7:     SBSmk1 117
 
 ##ALL SP comp before MPB (year 2003)
 
@@ -67,63 +79,64 @@ data <- data[, .N, by = SPcomp]
 setorder(data,-N)
 
 data
-#               SPcomp   N
-# 1:            PL 100 144
-# 2:        PL 90 S 10  32
-# 3:        PL 95 AT 5  21
-# 4:        PL 70 S 30   8
-# 5:       PL 90 AT 10   7
-# 8:  PL 80 S 10 AT 10   5
-# 9:    PL 90 AT 5 S 5   4
-# 10:   PL 85 AT 10 S 5   4
-# 12:        PL 80 S 20   3
-# 14:         PL 95 S 5   3
-# 15:   PL 75 S 20 AT 5   3
-# 16:  PL 70 S 20 AT 10   3
-# 17:       PL 80 AT 20   3
-# 19:        PL 89 S 11   2
-# 21:   PL 85 S 10 AT 5   2
-# 22:    PL 90 S 5 AT 5   2
-# 23:  PL 70 AT 20 S 10   2
-# 26:  PL 80 AT 10 S 10   2
-# 30:   PL 70 F 20 S 10   1
-# 32:   PL 70 S 20 F 10   1
-# 35:   PL 71 S 21 AT 8   1
-# 36:        PL 85 S 15   1
-# 43:   PL 80 S 10 F 10   1
-
-# 44: PL 55 AT 30 AC 15   1
-# 24:       PL 50 AT 50   2
-# 25:       AT 60 PL 40   2
-# 42:       AT 90 PL 10   1
-
-# 6:  PL 60 AT 30 S 10   5
-# 11:  AT 50 PL 30 S 20   4
-# 13:  PL 60 S 30 AT 10   3
-# 33:    S 90 PL 5 AT 5   1
-# 37:  PL 60 S 20 AT 20   1
-# 39:  S 70 PL 20 AC 10   1
-
-# 7:   S 40 F 30 PL 25   5
-# 29:   F 50 PL 30 S 20   1
-# 31:    F 55 S 38 PL 7   1
-
-# 45:   S 40 PL 40 B 10   1
-
-# 46:         S 80 B 20   1
-
-# 18:        S 70 PL 30   2
-# 20:        PL 69 S 31   2
-# 27:        PL 60 S 40   1
-# 28:        S 60 PL 40   1
-# 34:   PL 60 S 30 S 10   1
-
-# 38:             F 100   1
-
-# 40:   S 70 PL 20 E 10   1
-
-# 41:  AC 60 S 20 AT 20   1
-
+#   SPcomp   N
+#  1:            PL 100 152
+#  2:       PL 90 SW 10  31
+#  3:        PL 95 AT 5  22
+#  4:       PL 90 AT 10   8
+#  5:   PL 90 AT 5 SW 5   6
+#  6:       PL 70 SB 30   5
+#  7: PL 60 AT 30 SW 10   5
+#  8: SW 40 FD 30 PL 25   5
+#  9:  AT 50 PL 30 S 20   5
+# 10:       PL 70 SW 30   4
+# 11:       PL 85 SW 15   4
+# 12:       PL 80 SW 20   3
+# 13: PL 60 SW 30 AT 10   3
+# 14:        PL 95 SW 5   3
+# 15: PL 80 SW 10 AT 10   3
+# 16:  PL 75 SW 20 AT 5   3
+# 17: PL 70 SW 20 AT 10   3
+# 18:  PL 85 AT 10 SW 5   3
+# 19:       PL 80 AT 20   3
+# 20:  PL 80 S 10 AT 10   3
+# 21:       SW 70 PL 30   2
+# 22:       PL 89 SW 11   2
+# 23:       PL 69 SW 31   2
+# 24:       PL 90 SB 10   2
+# 25:  PL 85 SW 10 AT 5   2
+# 26:  PL 70 AT 20 S 10   2
+# 27:       PL 50 AT 50   2
+# 28:       AT 60 PL 40   2
+# 29:        PL 90 S 10   2
+# 30:       PL 60 SB 40   1
+# 31:       SW 60 PL 40   1
+# 32: FD 50 PL 30 SW 20   1
+# 33: PL 70 FD 20 SW 10   1
+# 34:  FD 55 SW 38 PL 7   1
+# 35: PL 70 SW 20 FD 10   1
+# 36:   SW 90 PL 5 AT 5   1
+# 37:   PL 90 SW 5 AT 5   1
+# 38: PL 60 SW 30 SB 10   1
+# 39:  PL 71 SW 21 AT 8   1
+# 40: PL 60 SW 20 AT 20   1
+# 41:            FD 100   1
+# 42:  PL 85 AT 10 SB 5   1
+# 43: SW 70 PL 20 AC 10   1
+# 44: SW 70 PL 20 EP 10   1
+# 45: AC 60 SW 20 AT 20   1
+# 46:       AT 90 PL 10   1
+# 47:  AT 50 PL 40 S 10   1
+# 48:    PL 90 S 5 AT 5   1
+# 49: PL 40 SW 30 AT 20   1
+# 50:  PL 80 S 10 FD 10   1
+# 51: PL 55 AT 30 AC 15   1
+# 52:        PL 80 S 20   1
+# 53:  PL 50 AT 30 S 20   1
+# 54:  PL 80 AT 10 S 10   1
+# 55: SW 40 PL 40 BL 10   1
+# 56: PL 80 AT 10 SW 10   1
+# 57:       SW 80 BL 20   1
 
 #Divide the Invdata into two files
 #1. tree level #NOTE: BA is ba/ha
@@ -178,7 +191,7 @@ for (i in unique(invdata$PlotNum)){
   opening <- unique(tmp$Opening)
   plot <- unique(tmp$Plot)
   plotn <- i
-  bec <- unique(tmp$BEC_sub_all)
+  bec <- unique(tmp$BEC_sub_va)
   si2003 <- tmp[Layer %in% "2003", unique(Stand_SI)]
   si2019 <- tmp[Layer %in% "2019", unique(Stand_SI)]
   cc2003 <- tmp[Layer %in% "2003", unique(Stand_CC)]
@@ -198,7 +211,7 @@ for (i in unique(invdata$PlotNum)){
   invtmp <- data.table(Opening = opening,
                        Plot = plot,
                        PlotNum = plotn,
-                       BEC_sub_all = bec,
+                       BEC_sub_va = bec,
                        SI_2003 = si2003,
                        SI_2019 = si2019,
                        CC_2003 = cc2003,

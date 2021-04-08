@@ -4,13 +4,13 @@ library(quickPlot)
 library(ggplot2)
 
 InvTree <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv"))
-InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/InvStand.csv"))
+InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly_widetable.csv"))
 
 ##remove non-regeneration plots in InvTree and InvStand
 
-n <- InvStand[Regen %in% "0", PlotNum]
-InvStand <- InvStand[Regen %in% "1"]
-InvTree <- InvTree[!PlotNum %in% n]
+# n <- InvStand[Regen %in% "0", PlotNum]
+# InvStand <- InvStand[Regen %in% "1"]
+# InvTree <- InvTree[!PlotNum %in% n]
 
 ##set color for species
 
@@ -23,24 +23,24 @@ SPcolor <- data.table(PL = "#56B4E9",
                       AC = "#CC79A7")
 
 ##############
-## SBSmk #####
+## SBSmk1 #####
 ##############
 
-SBSmkTree <- InvTree[BEC_sub_all %in% "SBSmk"]
-SBSmkStand <- InvStand[BEC_sub_all %in% "SBSmk"]
+SBSmkTree <- InvTree[BEC_sub_va %in% "SBSmk1"]
+SBSmkStand <- InvStand[BEC_sub_va %in% "SBSmk1"]
 
-SBSmk_Pine_PlotNum <- SBSmkTree[Status %in% 2003 & SP %in% "PL" & PCT >= 70, PlotNum]
+SBSmk_Pine_PlotNum <- SBSmkTree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, PlotNum]
 SBSmkTree_Pine <- SBSmkTree[PlotNum %in% SBSmk_Pine_PlotNum]
 SBSmkStand_Pine <- SBSmkStand[PlotNum %in% SBSmk_Pine_PlotNum]
 
-SBSmkStand_Pine[, mean(TPH_R,na.rm = TRUE)]
-#[1] 1928.713
+SBSmkStand_Pine[, mean(TPH_PS_Under,na.rm = TRUE)]
+#[1] 1881.905
 
-SBSmkStand_Pine[, range(TPH_R,na.rm = TRUE)]
+SBSmkStand_Pine[, range(TPH_PS_Under,na.rm = TRUE)]
 #[1] 200 9200
 
-SBSmkStand_Pine[,sqrt(var(TPH_R, na.rm = TRUE))]
-#[1] 1651.565
+SBSmkStand_Pine[,sqrt(var(TPH_PS_Under, na.rm = TRUE))]
+#[1] 1639.112
 
 #Plot species combination
 
@@ -83,7 +83,9 @@ setorder(data,-N)
 
 #density, age, height of regeneration
 
-SBSmkTree_Pine[Status %in% "Regen", sum(TPH, na.rm = TRUE)/101, by = SP]
+length(unique(SBSmkTree_Pine$PlotNum))
+
+SBSmkTree_Pine[Layer %in% "L3/L4", sum(200*Count, na.rm = TRUE)/112, by = SP]
 SBSmkTree_Pine[Status %in% "Regen", range(TPH, na.rm = TRUE), by = SP]
 SBSmkTree_Pine[Status %in% "Regen", mean(Age, na.rm = TRUE), by = SP]
 SBSmkTree_Pine[Status %in% "Regen", range(Age, na.rm = TRUE), by = SP]
