@@ -23,6 +23,10 @@ invdata <- invdata[PlotNum %in% plt]
 #regenplot <- invdata[Layer %in% "L3/L4", unique(PlotNum)]
 #invdata <- invdata[PlotNum %in% regenplot]
 
+#remove duplicated rows
+
+invdata <- distinct(invdata)
+
 ##Unify SP code
 
 unique(invdata$SP)
@@ -45,6 +49,7 @@ invdata[SP %in% " ",SP := "UNK"]
 
 invdata[SP %in% "X2"]
 invdata[SP %in% c("X2"),SP := "PL"]
+
 
 ##How many plots in each BEC & subBEC combination?
 
