@@ -1,0 +1,233 @@
+rm(list=ls())
+library(data.table)
+library(dplyr)
+library(tidyr)
+
+##VRI 2003 data cleaning
+
+invdata_2003 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_VRI2003.txt", sep = ",", header = TRUE))
+inv2003_poly <- data.table(id = invdata_2003$id,
+                           Layer = 2003,
+                           Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                           Stand_SI = invdata_2003$SITE_INDEX,
+                           Stand_CC = invdata_2003$CROWN_CLOSURE,
+                           Stand_QMD125 = invdata_2003$QUAD_DIAM_125,
+                           Stand_TPH = invdata_2003$VRI_LIVE_STEMS_PER_HA,
+                           Stand_BA = invdata_2003$BASAL_AREA,
+                           Stand_VOL125 = invdata_2003$LIVE_STAND_VOLUME_125)
+
+inv2003_SP1 <- data.table(id = invdata_2003$id,
+                          Layer = 2003,
+                          Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                          SP = invdata_2003$SPECIES_CD_1,
+                          PCT = invdata_2003$SPECIES_PCT_1,
+                          Age = invdata_2003$PROJ_AGE_1,
+                          Ht = invdata_2003$PROJ_HEIGHT_1)
+
+inv2003_SP2 <- data.table(id = invdata_2003$id,
+                          Layer = 2003,
+                          Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                          SP = invdata_2003$SPECIES_CD_2,
+                          PCT = invdata_2003$SPECIES_PCT_2,
+                          Age = invdata_2003$PROJ_AGE_2,
+                          Ht = invdata_2003$PROJ_HEIGHT_2)
+
+inv2003_SP2 <- inv2003_SP2[!SP %in% ""]
+
+inv2003_SP3 <- data.table(id = invdata_2003$id,
+                          Layer = 2003,
+                          Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                          SP = invdata_2003$SPECIES_CD_3,
+                          PCT = invdata_2003$SPECIES_PCT_3,
+                          Age = NA,
+                          Ht = NA)
+
+inv2003_SP3 <- inv2003_SP3[!SP %in% ""]
+
+inv2003_SP4 <- data.table(id = invdata_2003$id,
+                          Layer = 2003,
+                          Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                          SP = invdata_2003$SPECIES_CD_4,
+                          PCT = invdata_2003$SPECIES_PCT_4,
+                          Age = NA,
+                          Ht = NA)
+
+inv2003_SP4 <- inv2003_SP4[!SP %in% ""]
+
+inv2003_SP5 <- data.table(id = invdata_2003$id,
+                          Layer = 2003,
+                          Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                          SP = invdata_2003$SPECIES_CD_5,
+                          PCT = invdata_2003$SPECIES_PCT_5,
+                          Age = NA,
+                          Ht = NA)
+
+inv2003_SP5 <- inv2003_SP5[!SP %in% ""]
+
+inv2003_layer <- rbind(inv2003_SP1,inv2003_SP2,inv2003_SP3, inv2003_SP4, inv2003_SP5)
+
+##Combine post-MPB survey data with VRI 2003
+##LAYER file
+
+ITSL_layer <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer.csv",header = TRUE))
+
+#invdata[,c("GPSlat","GPSlong","Long","Lat") := NULL]
+
+ITSL_layer$Layer <- as.character(ITSL_layer$Layer)
+ITSL_layer[Layer %in% "1" | Layer %in% "2", Layer := "L1/L2"]
+ITSL_layer[Layer %in% "3" | Layer %in% "4", Layer := "L3/L4"]
+
+invITSL_layer <- ITSL_layer[, .(PCT = sum(PCT), AGE = mean(AGE), HT = mean(HT)), by = .(id, Layer, SP)]
+invITSL_layer[,sumPCT := sum(PCT), by = .(id, Layer)]
+invITSL_layer <- invITSL_layer[,PCT := round(100*PCT/sumPCT, digits = 2), by = .(id, Layer, SP)]
+invITSL_layer[,sumPCT := NULL]
+
+invITSL_layer$Inventory_Standard = "ITSL"
+
+setnames(invITSL_layer, "AGE", "Age")
+setnames(invITSL_layer, "HT", "Ht")
+
+inv_layer <- rbind(inv2003_layer, invITSL_layer, fill= TRUE)
+
+##POLY file
+
+ITSL_count <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_count.csv",header = TRUE))
+ITSL_poly <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly.csv",header = TRUE))
+
+ITSL_count$Layer <- as.character(ITSL_count$Layer)
+ITSL_count[Layer %in% "1" | Layer %in% "2", Layer := "L1/L2"]
+ITSL_count[Layer %in% "3" | Layer %in% "4", Layer := "L3/L4"]
+count <- ITSL_count[,.(TT = sum(TT)), by = .(id, Layer)]
+
+NPlot <- ITSL_poly[,.(id, NPlots)]
+count <- merge(count,NPlot, by = "id")
+
+invITSL_poly <- data.table(id = count$id,
+                           Layer = count$Layer,
+                           Stand_TPH = round(count$TT * 200/count$NPlots, digits = 0))
+
+invITSL_poly$Inventory_Standard = "ITSL"
+
+for(i in unique(invITSL_poly$id)){
+  nonpba <- ITSL_poly[id %in% i, nonPliba]
+  livepba <- ITSL_poly[id %in% i, LivePliba]
+  sumBA <- nonpba + livepba
+  deadpba <- ITSL_poly[id %in% i, DeadPliba]
+  pctkill <- ITSL_poly[id %in% i, PCTPliKillba]
+
+  invITSL_poly[id %in% i & Layer %in% "L1/L2",':='(npBA = nonpba,
+                                                   pBA = livepba,
+                                                   Stand_BA = sumBA,
+                                                   deadpBA = deadpba,
+                                                   Kill_PCT = pctkill)]
+}
+
+inv_poly <- rbind(inv2003_poly, invITSL_poly, fill = TRUE)
+
+##VRI 2019 data cleaning
+
+invdata_2019 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_VRI2019.txt", sep = ",", header = TRUE))
+inv2019_poly <- distinct(data.table(id = invdata_2019$id,
+                                    Layer = 2019,
+                                    Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
+                                    BEC = invdata_2019$BEC_ZONE_CODE,
+                                    subBEC = invdata_2019$BEC_SUBZONE,
+                                    vaBEC = invdata_2019$BEC_VARIANT,
+                                    Stand_SI = invdata_2019$SITE_INDEX,
+                                    Stand_CC = invdata_2019$CROWN_CLOSURE,
+                                    Stand_QMD125 = invdata_2019$QUAD_DIAM_125,
+                                    Stand_TPH = invdata_2019$VRI_LIVE_STEMS_PER_HA,
+                                    Stand_BA = invdata_2019$BASAL_AREA,
+                                    Stand_VOL125 = invdata_2019$LIVE_STAND_VOLUME_125,
+                                    Stand_DeadVol125 = invdata_2019$DEAD_STAND_VOLUME_125,
+                                    Dist_Type = invdata_2019$EARLIEST_NONLOGGING_DIST_TYPE,
+                                    Dist_year = invdata_2019$EARLIEST_NONLOGGING_DIST_DATE,
+                                    Kill_PCT = invdata_2019$STAND_PERCENTAGE_DEAD))
+
+inv2019_SP1 <- data.table(id = invdata_2019$id,
+                          Layer = 2019,
+                          Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
+                          BEC = invdata_2019$BEC_ZONE_CODE,
+                          subBEC = invdata_2019$BEC_SUBZONE,
+                          vaBEC = invdata_2019$BEC_VARIANT,
+                          SP = invdata_2019$SPECIES_CD_1,
+                          PCT = invdata_2019$SPECIES_PCT_1,
+                          Age = invdata_2019$PROJ_AGE_1,
+                          Ht = invdata_2019$PROJ_HEIGHT_1)
+
+inv2019_SP2 <- data.table(id = invdata_2019$id,
+                          Layer = 2019,
+                          Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
+                          BEC = invdata_2019$BEC_ZONE_CODE,
+                          subBEC = invdata_2019$BEC_SUBZONE,
+                          vaBEC = invdata_2019$BEC_VARIANT,
+                          SP = invdata_2019$SPECIES_CD_2,
+                          PCT = invdata_2019$SPECIES_PCT_2,
+                          Age = invdata_2019$PROJ_AGE_2,
+                          Ht = invdata_2019$PROJ_HEIGHT_2)
+
+inv2019_SP2 <- inv2019_SP2[!SP %in% ""]
+
+inv2019_SP3 <- data.table(id = invdata_2019$id,
+                          Layer = 2019,
+                          Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
+                          BEC = invdata_2019$BEC_ZONE_CODE,
+                          subBEC = invdata_2019$BEC_SUBZONE,
+                          vaBEC = invdata_2019$BEC_VARIANT,
+                          SP = invdata_2019$SPECIES_CD_3,
+                          PCT = invdata_2019$SPECIES_PCT_3,
+                          Age = NA,
+                          Ht = NA)
+
+inv2019_SP3 <- inv2019_SP3[!SP %in% ""]
+
+inv2019_SP4 <- data.table(id = invdata_2019$id,
+                          Layer = 2019,
+                          Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
+                          BEC = invdata_2019$BEC_ZONE_CODE,
+                          subBEC = invdata_2019$BEC_SUBZONE,
+                          vaBEC = invdata_2019$BEC_VARIANT,
+                          SP = invdata_2019$SPECIES_CD_4,
+                          PCT = invdata_2019$SPECIES_PCT_4,
+                          Age = NA,
+                          Ht = NA)
+
+inv2019_SP4 <- inv2019_SP4[!SP %in% ""]
+
+inv2019_SP5 <- data.table(id = invdata_2019$id,
+                          Layer = 2019,
+                          Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
+                          BEC = invdata_2019$BEC_ZONE_CODE,
+                          subBEC = invdata_2019$BEC_SUBZONE,
+                          vaBEC = invdata_2019$BEC_VARIANT,
+                          SP = invdata_2019$SPECIES_CD_5,
+                          PCT = invdata_2019$SPECIES_PCT_5,
+                          Age = NA,
+                          Ht = NA)
+
+inv2019_SP5 <- inv2019_SP5[!SP %in% ""]
+
+inv2019_layer <- rbind(inv2019_SP1,inv2019_SP2,inv2019_SP3, inv2019_SP4, inv2019_SP5)
+
+##Combine post-survy, 2003 and 2019 all together
+
+inv_layer <- rbind(inv_layer,inv2019_layer, fill = TRUE)
+inv_poly <- rbind(inv_poly, inv2019_poly, fill = TRUE)
+
+##add BEC for all rows
+
+bec <- distinct(inv_poly[Layer %in% "2019", .(id, BEC, subBEC, vaBEC)])
+inv_poly[, c("BEC", "subBEC", "vaBEC") := NULL]
+inv_poly <- merge(inv_poly, bec, by = "id", all.x = TRUE)
+
+#inv_poly <- relocate(inv_poly,BEC, subBEC, vaBEC, .before = SP)
+
+inv_poly <- separate(data = inv_poly,
+                      col = Dist_year,
+                      into = "Dist_year",
+                      sep = "-",
+                      extra = "drop")
+
+
+write.csv(inv_layer,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer_VRI0319.csv", row.names = FALSE, na = "")
+write.csv(inv_poly,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly_VRI0319.csv", row.names = FALSE, na = "")

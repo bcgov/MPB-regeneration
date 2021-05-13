@@ -10,13 +10,16 @@ library(MASS) #for negative binomial regression
 library(pscl) # for zero inflected negative binomial regression
 
 InvTree <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv"))
-InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly.csv"))
+InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly_widetable.csv"))
 
 ##remove non-regeneration plots in InvTree and InvStand
 
 n <- InvStand[Regen %in% "0", PlotNum]
 InvStand <- InvStand[Regen %in% "1"]
 InvTree <- InvTree[!PlotNum %in% n]
+
+####
+
 InvStand[,PL_PCT := PL_PCT/100]
 InvStand[,S_PCT := S_PCT/100]
 InvStand[,B_PCT := B_PCT/100]
@@ -24,31 +27,49 @@ InvStand[,F_PCT := F_PCT/100]
 InvStand[,HW_PCT := HW_PCT/100]
 InvStand[,Interval := Dist_Year-2003]
 
-##divided to SBSmk and SBSdw
+##divided to SBSmk1, SBSdw2 and SBSdw3
 
-SBSmkTree <- InvTree[BEC_sub_all %in% "SBSmk"]
-SBSmkStand <- InvStand[BEC_sub_all %in% "SBSmk"]
-SBSmk_Pine_PlotNum <- SBSmkTree[Status %in% 2003 & SP %in% "PL" & PCT >= 70, PlotNum]
+SBSmkTree <- InvTree[BEC_sub_va %in% "SBSmk1"]
+SBSmkStand <- InvStand[BEC_sub_va %in% "SBSmk1"]
+SBSmk_Pine_PlotNum <- SBSmkTree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
 SBSmkTree_Pine <- SBSmkTree[PlotNum %in% SBSmk_Pine_PlotNum]
 SBSmkStand_Pine <- SBSmkStand[PlotNum %in% SBSmk_Pine_PlotNum]
 
-SBSdwTree <- InvTree[BEC_sub_all %in% "SBSdw"]
-SBSdwStand <- InvStand[BEC_sub_all %in% "SBSdw"]
-SBSdw_Pine_PlotNum <- SBSdwTree[Status %in% 2003 & SP %in% "PL" & PCT >= 70, PlotNum]
-SBSdwTree_Pine <- SBSdwTree[PlotNum %in% SBSdw_Pine_PlotNum]
-SBSdwStand_Pine <- SBSdwStand[PlotNum %in% SBSdw_Pine_PlotNum]
+SBSdw2Tree <- InvTree[BEC_sub_va %in% "SBSdw2"]
+SBSdw2Stand <- InvStand[BEC_sub_va %in% "SBSdw2"]
+SBSdw2_Pine_PlotNum <- SBSdw2Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
+SBSdw2Tree_Pine <- SBSdw2Tree[PlotNum %in% SBSdw2_Pine_PlotNum]
+SBSdw2Stand_Pine <- SBSdw2Stand[PlotNum %in% SBSdw2_Pine_PlotNum]
 
+SBSdw3Tree <- InvTree[BEC_sub_va %in% "SBSdw3"]
+SBSdw3Stand <- InvStand[BEC_sub_va %in% "SBSdw3"]
+SBSdw3_Pine_PlotNum <- SBSdw3Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
+SBSdw3Tree_Pine <- SBSdw3Tree[PlotNum %in% SBSdw3_Pine_PlotNum]
+SBSdw3Stand_Pine <- SBSdw3Stand[PlotNum %in% SBSdw3_Pine_PlotNum]
 
 ##1. Prediction of tph of regeneration
 
-lmtest <- lm(log(TPH_R) ~ BA_PS, data = SBSmkStand_Pine)
+lmtest <- lm(log(TPH_PS_Under) ~ TPH_PS_Over, data = SBSmkStand_Pine)
 summary(lmtest)
 
-lmtest <- lm(log(TPH_R) ~ BA_PS, data = SBSdwStand_Pine)
+lmtest <- lm(log(TPH_PS_Under) ~ TPH_PS_Over, data = SBSdw2Stand_Pine)
 summary(lmtest)
 
-a <- SBSmkStand_Pine[,.(BA_PS, TPH_R)]
-a[,TPH_est := exp(coef(lmtest)[1] + coef(lmtest)[2]*BA_PS)]
+lmtest <- lm(log(TPH_PS_Under) ~ BA_2019, data = SBSdw3Stand_Pine)
+summary(lmtest)
+
+a <- SBSdw2Stand_Pine[,.(TPH_PS_Over, TPH_PS_Under)]
+a[,TPH_est := exp(coef(lmtest)[1] + coef(lmtest)[2]*TPH_PS_Over)]
+
+figure <- ggplot(data = a, aes(x= TPH_PS_Over, y = log(TPH_PS_Under)))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_x_continuous(name = "Overstory TPH (stems/ha)")+
+  scale_y_continuous(name = "ln understory density (stems/ha)")+
+  labs(title = "(b) ln understory density vs overstory density (SBSdw2)")+
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(fill = NA))
 
 
 ##2. Model for species composition of regeneration
