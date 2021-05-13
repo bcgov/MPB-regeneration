@@ -14,9 +14,9 @@ InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp
 
 ##remove non-regeneration plots in InvTree and InvStand
 
-n <- InvStand[Regen %in% "0", PlotNum]
+n <- InvStand[Regen %in% "0", id]
 InvStand <- InvStand[Regen %in% "1"]
-InvTree <- InvTree[!PlotNum %in% n]
+InvTree <- InvTree[!id %in% n]
 
 ####
 
@@ -31,21 +31,21 @@ InvStand[,Interval := Dist_Year-2003]
 
 SBSmkTree <- InvTree[BEC_sub_va %in% "SBSmk1"]
 SBSmkStand <- InvStand[BEC_sub_va %in% "SBSmk1"]
-SBSmk_Pine_PlotNum <- SBSmkTree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
-SBSmkTree_Pine <- SBSmkTree[PlotNum %in% SBSmk_Pine_PlotNum]
-SBSmkStand_Pine <- SBSmkStand[PlotNum %in% SBSmk_Pine_PlotNum]
+SBSmk_Pine_id <- SBSmkTree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(id)]
+SBSmkTree_Pine <- SBSmkTree[id %in% SBSmk_Pine_id]
+SBSmkStand_Pine <- SBSmkStand[id %in% SBSmk_Pine_id]
 
 SBSdw2Tree <- InvTree[BEC_sub_va %in% "SBSdw2"]
 SBSdw2Stand <- InvStand[BEC_sub_va %in% "SBSdw2"]
-SBSdw2_Pine_PlotNum <- SBSdw2Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
-SBSdw2Tree_Pine <- SBSdw2Tree[PlotNum %in% SBSdw2_Pine_PlotNum]
-SBSdw2Stand_Pine <- SBSdw2Stand[PlotNum %in% SBSdw2_Pine_PlotNum]
+SBSdw2_Pine_id <- SBSdw2Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(id)]
+SBSdw2Tree_Pine <- SBSdw2Tree[id %in% SBSdw2_Pine_id]
+SBSdw2Stand_Pine <- SBSdw2Stand[id %in% SBSdw2_Pine_id]
 
 SBSdw3Tree <- InvTree[BEC_sub_va %in% "SBSdw3"]
 SBSdw3Stand <- InvStand[BEC_sub_va %in% "SBSdw3"]
-SBSdw3_Pine_PlotNum <- SBSdw3Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
-SBSdw3Tree_Pine <- SBSdw3Tree[PlotNum %in% SBSdw3_Pine_PlotNum]
-SBSdw3Stand_Pine <- SBSdw3Stand[PlotNum %in% SBSdw3_Pine_PlotNum]
+SBSdw3_Pine_id <- SBSdw3Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(id)]
+SBSdw3Tree_Pine <- SBSdw3Tree[id %in% SBSdw3_Pine_id]
+SBSdw3Stand_Pine <- SBSdw3Stand[id %in% SBSdw3_Pine_id]
 
 ##1. Prediction of tph of regeneration
 

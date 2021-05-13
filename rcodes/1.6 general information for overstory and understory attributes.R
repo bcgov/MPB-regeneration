@@ -8,12 +8,12 @@ InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp
 
 ##remove non-regeneration plots in InvTree and InvStand
 
-# n <- InvStand[Regen %in% "0", PlotNum]
+# n <- InvStand[Regen %in% "0", id]
 # InvStand <- InvStand[Regen %in% "1"]
-# InvTree <- InvTree[!PlotNum %in% n]
+# InvTree <- InvTree[!id %in% n]
 
 #Add SP0 for all plots?
-##Two plots (PlotNum 66 and 69 has no record for 2019's VRI, so the SP0 code for them are unkown)
+##Two plots (id 66 and 69 has no record for 2019's VRI, so the SP0 code for them are unkown)
 
 for (i in 1:dim(InvTree)[1]){
   if(InvTree[i, SP] == "PL"){
@@ -59,9 +59,9 @@ SPcolor <- data.table(PL = "#56B4E9",
 SBSmkTree <- InvTree[BEC_sub_va %in% "SBSmk1"]
 SBSmkStand <- InvStand[BEC_sub_va %in% "SBSmk1"]
 
-SBSmk_Pine_PlotNum <- SBSmkTree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
-SBSmkTree_Pine <- SBSmkTree[PlotNum %in% SBSmk_Pine_PlotNum]
-SBSmkStand_Pine <- SBSmkStand[PlotNum %in% SBSmk_Pine_PlotNum]
+SBSmk_Pine_id <- SBSmkTree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(id)]
+SBSmkTree_Pine <- SBSmkTree[id %in% SBSmk_Pine_id]
+SBSmkStand_Pine <- SBSmkStand[id %in% SBSmk_Pine_id]
 
 SBSmkStand_Pine[, mean(TPH_PS_Under,na.rm = TRUE)]
 #[1] 1594.286
@@ -75,7 +75,7 @@ SBSmkStand_Pine[,sqrt(var(TPH_PS_Under, na.rm = TRUE))]
 #Plot species combination
 
 SBSmk_spcomp2003 <- ggplot(data = SBSmkTree_Pine[Layer %in% "2003"])+
-  geom_bar(aes(x = as.character(PlotNum), y = PCT, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = PCT, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(x = "Plot", y = "PCT by volume")+
   theme(panel.background = element_blank(),
@@ -83,7 +83,7 @@ SBSmk_spcomp2003 <- ggplot(data = SBSmkTree_Pine[Layer %in% "2003"])+
         axis.text.x = element_blank())
 
 SBSmk_spcomp2019 <- ggplot(data = SBSmkTree_Pine[Layer %in% "2019"])+
-  geom_bar(aes(x = as.character(PlotNum), y = PCT, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = PCT, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "VRI 2019 species composition (SBSmk1)", x = "Plot", y = "PCT by basal area")+
   theme(panel.background = element_blank(),
@@ -93,7 +93,7 @@ SBSmk_spcomp2019 <- ggplot(data = SBSmkTree_Pine[Layer %in% "2019"])+
 ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp_VRI2019_SBSmk1.tiff")
 
 SBSmk_spcompPSO <- ggplot(data = SBSmkTree_Pine[Layer %in% "L1/L2"])+
-  geom_bar(aes(x = as.character(PlotNum), y = Count, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = Count, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "Post-MPB survey overstory species composition (SBSmk1)", x = "Plot", y = "PCT by stem tallied")+
   theme(panel.background = element_blank(),
@@ -103,7 +103,7 @@ SBSmk_spcompPSO <- ggplot(data = SBSmkTree_Pine[Layer %in% "L1/L2"])+
 ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp_PS_overstory_SBSmk1.tiff")
 
 SBSmk_spregen <- ggplot(data = SBSmkTree_Pine[Layer %in% "L3/L4"])+
-  geom_bar(aes(x = as.character(PlotNum), y = Count, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = Count, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "Post-MPB survey understory composition (SBSmk1)", x = "Plot", y = "PCT by stems tallied")+
   theme(panel.background = element_blank(),
@@ -115,7 +115,7 @@ ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp
 
 #density, age, height of regeneration
 
-length(unique(SBSmkTree_Pine$PlotNum))
+length(unique(SBSmkTree_Pine$id))
 
 SBSmkTree_Pine[Layer %in% "L3/L4", .N, by = SP]
 SBSmkTree_Pine[Layer %in% "L3/L4", sum(200*Count, na.rm = TRUE)/109, by = SP]
@@ -174,9 +174,9 @@ SBSdw2Stand <- InvStand[BEC_sub_va %in% "SBSdw2"]
 
 ##Pine dominant stands
 
-SBSdw2_Pine_PlotNum <- SBSdw2Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
-SBSdw2Tree_Pine <- SBSdw2Tree[PlotNum %in% SBSdw2_Pine_PlotNum]
-SBSdw2Stand_Pine <- SBSdw2Stand[PlotNum %in% SBSdw2_Pine_PlotNum]
+SBSdw2_Pine_id <- SBSdw2Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(id)]
+SBSdw2Tree_Pine <- SBSdw2Tree[id %in% SBSdw2_Pine_id]
+SBSdw2Stand_Pine <- SBSdw2Stand[id %in% SBSdw2_Pine_id]
 
 SBSdw2Stand_Pine[, mean(TPH_PS_Under,na.rm = TRUE)]
 #[1] 1985.586
@@ -190,7 +190,7 @@ SBSdw2Stand_Pine[,sqrt(var(TPH_PS_Under, na.rm = TRUE))]
 #Plot species composition
 
 SBSdw2_spcomp2003 <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "2003"])+
-  geom_bar(aes(x = as.character(PlotNum), y = PCT, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = PCT, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(x = "Plot", y = "PCT by volume")+
   theme(panel.background = element_blank(),
@@ -198,7 +198,7 @@ SBSdw2_spcomp2003 <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "2003"])+
         axis.text.x = element_blank())
 
 SBSdw2_spcomp2019 <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "2019"])+
-  geom_bar(aes(x = as.character(PlotNum), y = PCT, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = PCT, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "VRI 2019 species composition (SBSdw2)", x = "Plot", y = "PCT by basal area")+
   theme(panel.background = element_blank(),
@@ -208,7 +208,7 @@ SBSdw2_spcomp2019 <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "2019"])+
 ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp_VRI2019_SBSdw2.tiff")
 
 SBSdw2_spover <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "L1/L2"])+
-  geom_bar(aes(x = as.character(PlotNum), y = Count, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = Count, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "Post-MPB survey overstory composition (SBSdw2)", x = "Plot", y = "PCT by stems tallied")+
   theme(panel.background = element_blank(),
@@ -218,7 +218,7 @@ SBSdw2_spover <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "L1/L2"])+
 ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp_PS_overstory_SBSdw2.tiff")
 
 SBSdw2_spregen <- ggplot(data = SBSdw2Tree_Pine[Layer %in% "L3/L4"])+
-  geom_bar(aes(x = as.character(PlotNum), y = Count, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = Count, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "Post-MPB survey understory composition (SBSdw2)", x = "Plot", y = "PCT by stems tallied")+
   theme(panel.background = element_blank(),
@@ -286,9 +286,9 @@ SBSdw3Stand <- InvStand[BEC_sub_va %in% "SBSdw3"]
 
 ##Pine dominant stands
 
-SBSdw3_Pine_PlotNum <- SBSdw3Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(PlotNum)]
-SBSdw3Tree_Pine <- SBSdw3Tree[PlotNum %in% SBSdw3_Pine_PlotNum]
-SBSdw3Stand_Pine <- SBSdw3Stand[PlotNum %in% SBSdw3_Pine_PlotNum]
+SBSdw3_Pine_id <- SBSdw3Tree[Layer %in% 2003 & SP %in% "PL" & PCT >= 70, unique(id)]
+SBSdw3Tree_Pine <- SBSdw3Tree[id %in% SBSdw3_Pine_id]
+SBSdw3Stand_Pine <- SBSdw3Stand[id %in% SBSdw3_Pine_id]
 
 SBSdw3Stand_Pine[, mean(TPH_PS_Under,na.rm = TRUE)]
 #[1] 1552
@@ -302,7 +302,7 @@ SBSdw3Stand_Pine[,sqrt(var(TPH_PS_Under, na.rm = TRUE))]
 #Plot species composition
 
 SBSdw3_spcomp2003 <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "2003"])+
-  geom_bar(aes(x = as.character(PlotNum), y = PCT, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = PCT, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(x = "Plot", y = "PCT by volume")+
   theme(panel.background = element_blank(),
@@ -310,7 +310,7 @@ SBSdw3_spcomp2003 <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "2003"])+
         axis.text.x = element_blank())
 
 SBSdw3_spcomp2019 <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "2019"])+
-  geom_bar(aes(x = as.character(PlotNum), y = PCT, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = PCT, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "VRI 2019 species composition (SBSdw3)", x = "Plot", y = "PCT by basal area")+
   theme(panel.background = element_blank(),
@@ -320,7 +320,7 @@ SBSdw3_spcomp2019 <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "2019"])+
 ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp_VRI2019_SBSdw3.tiff")
 
 SBSdw3_spover <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "L1/L2"])+
-  geom_bar(aes(x = as.character(PlotNum), y = Count, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = Count, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "Post-MPB survey overstory composition (SBSdw3)", x = "Plot", y = "PCT by stems tallied")+
   theme(panel.background = element_blank(),
@@ -330,7 +330,7 @@ SBSdw3_spover <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "L1/L2"])+
 ggsave("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/documents/figures/Spcomp_PS_overstory_SBSdw3.tiff")
 
 SBSdw3_spregen <- ggplot(data = SBSdw3Tree_Pine[Layer %in% "L3/L4"])+
-  geom_bar(aes(x = as.character(PlotNum), y = Count, fill = SP0), stat = "identity", position = "fill")+
+  geom_bar(aes(x = as.character(id), y = Count, fill = SP0), stat = "identity", position = "fill")+
   scale_fill_manual(values = SPcolor)+
   labs(title = "Post-MPB survey understory composition (SBSdw3)", x = "Plot", y = "PCT by stems tallied")+
   theme(panel.background = element_blank(),
