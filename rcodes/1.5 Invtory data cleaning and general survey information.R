@@ -8,15 +8,15 @@ invdata <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/
 
 ##Remove plots dont have post survey information (some plots has GPS record but no survey record)
 
-tmp <- invdata[,.(unique(Layer)),by = PlotNum]
+tmp <- invdata[,.(unique(Layer)),by = id]
 plt <- NULL
-for (i in unique(tmp$PlotNum)){
-  layers <- tmp[PlotNum %in% i, V1]
+for (i in unique(tmp$id)){
+  layers <- tmp[id %in% i, V1]
   if(is.element("L1/L2", layers)|is.element("L3/L4", layers)|is.element("Dead", layers)){
     plt <- c(plt,i)
   }
 }
-invdata <- invdata[PlotNum %in% plt]
+invdata <- invdata[id %in% plt]
 
 ##only retain plot that have regeneration information ("L3/L4" in the Layer column)
 
@@ -62,7 +62,7 @@ invdata$vaBEC <- as.character(invdata$vaBEC)
 invdata[vaBEC %in% NA, vaBEC := ""]
 
 invdata[,BEC_sub_va := paste0(BEC,subBEC, vaBEC)]
-invdata_BEC <- distinct(invdata[,.(PlotNum,BEC_sub_va)])
+invdata_BEC <- distinct(invdata[,.(id,BEC_sub_va)])
 invdata_BEC[, .N, by = BEC_sub_va]
 
 # BEC_sub_va   N
@@ -76,8 +76,8 @@ invdata_BEC[, .N, by = BEC_sub_va]
 
 ##ALL SP comp before MPB (year 2003)
 
-data <- invdata[Layer %in% "2003",.(SP = paste(SP,PCT)),by= PlotNum]
-data[, SPcomp := Reduce(paste, SP), by=PlotNum]
+data <- invdata[Layer %in% "2003",.(SP = paste(SP,PCT)),by= id]
+data[, SPcomp := Reduce(paste, SP), by=id]
 data[,SP := NULL]
 data <- unique(data)
 data <- data[, .N, by = SPcomp]
