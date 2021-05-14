@@ -9,6 +9,9 @@ invdata_2003 <- data.table(read.table("J:/!Workgrp/Inventory/MPB regeneration_We
 inv2003_poly <- data.table(id = invdata_2003$id,
                            Layer = 2003,
                            Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
+                           BEC = invdata_2003$BEC_ZONE_CODE,
+                           subBEC = invdata_2003$BEC_SUBZONE,
+                           vaBEC = invdata_2003$BEC_VARIANT,
                            Stand_SI = invdata_2003$SITE_INDEX,
                            Stand_CC = invdata_2003$CROWN_CLOSURE,
                            Stand_QMD125 = invdata_2003$QUAD_DIAM_125,
@@ -114,13 +117,20 @@ for(i in unique(invITSL_poly$id)){
   sumBA <- nonpba + livepba
   deadpba <- ITSL_poly[id %in% i, DeadPliba]
   pctkill <- ITSL_poly[id %in% i, PCTPliKillba]
+  bec <- ITSL_poly[id %in% i, BEC]
 
   invITSL_poly[id %in% i & Layer %in% "L1/L2",':='(npBA = nonpba,
                                                    pBA = livepba,
                                                    Stand_BA = sumBA,
                                                    deadpBA = deadpba,
-                                                   Kill_PCT = pctkill)]
+                                                   Kill_PCT = pctkill,
+                                                   BEC_sub_va = bec)]
+  invITSL_poly[id %in% i & Layer %in% "L3/L4",':='(BEC_sub_va = bec)]
 }
+
+invITSL_poly[, BEC := gsub("[[:lower:]]+|([0-9]+).*", "", BEC_sub_va)]
+invITSL_poly[, subBEC := gsub("[[:upper:]]+|([0-9]+).*", "", BEC_sub_va)]
+invITSL_poly[, vaBEC := gsub("[[:upper:]]+|[[:lower:]]+", "", BEC_sub_va)]
 
 inv_poly <- rbind(inv2003_poly, invITSL_poly, fill = TRUE)
 
@@ -147,9 +157,6 @@ inv2019_poly <- distinct(data.table(id = invdata_2019$id,
 inv2019_SP1 <- data.table(id = invdata_2019$id,
                           Layer = 2019,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
-                          BEC = invdata_2019$BEC_ZONE_CODE,
-                          subBEC = invdata_2019$BEC_SUBZONE,
-                          vaBEC = invdata_2019$BEC_VARIANT,
                           SP = invdata_2019$SPECIES_CD_1,
                           PCT = invdata_2019$SPECIES_PCT_1,
                           Age = invdata_2019$PROJ_AGE_1,
@@ -158,9 +165,6 @@ inv2019_SP1 <- data.table(id = invdata_2019$id,
 inv2019_SP2 <- data.table(id = invdata_2019$id,
                           Layer = 2019,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
-                          BEC = invdata_2019$BEC_ZONE_CODE,
-                          subBEC = invdata_2019$BEC_SUBZONE,
-                          vaBEC = invdata_2019$BEC_VARIANT,
                           SP = invdata_2019$SPECIES_CD_2,
                           PCT = invdata_2019$SPECIES_PCT_2,
                           Age = invdata_2019$PROJ_AGE_2,
@@ -171,9 +175,6 @@ inv2019_SP2 <- inv2019_SP2[!SP %in% ""]
 inv2019_SP3 <- data.table(id = invdata_2019$id,
                           Layer = 2019,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
-                          BEC = invdata_2019$BEC_ZONE_CODE,
-                          subBEC = invdata_2019$BEC_SUBZONE,
-                          vaBEC = invdata_2019$BEC_VARIANT,
                           SP = invdata_2019$SPECIES_CD_3,
                           PCT = invdata_2019$SPECIES_PCT_3,
                           Age = NA,
@@ -184,9 +185,6 @@ inv2019_SP3 <- inv2019_SP3[!SP %in% ""]
 inv2019_SP4 <- data.table(id = invdata_2019$id,
                           Layer = 2019,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
-                          BEC = invdata_2019$BEC_ZONE_CODE,
-                          subBEC = invdata_2019$BEC_SUBZONE,
-                          vaBEC = invdata_2019$BEC_VARIANT,
                           SP = invdata_2019$SPECIES_CD_4,
                           PCT = invdata_2019$SPECIES_PCT_4,
                           Age = NA,
@@ -197,9 +195,6 @@ inv2019_SP4 <- inv2019_SP4[!SP %in% ""]
 inv2019_SP5 <- data.table(id = invdata_2019$id,
                           Layer = 2019,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
-                          BEC = invdata_2019$BEC_ZONE_CODE,
-                          subBEC = invdata_2019$BEC_SUBZONE,
-                          vaBEC = invdata_2019$BEC_VARIANT,
                           SP = invdata_2019$SPECIES_CD_5,
                           PCT = invdata_2019$SPECIES_PCT_5,
                           Age = NA,
@@ -214,11 +209,40 @@ inv2019_layer <- rbind(inv2019_SP1,inv2019_SP2,inv2019_SP3, inv2019_SP4, inv2019
 inv_layer <- rbind(inv_layer,inv2019_layer, fill = TRUE)
 inv_poly <- rbind(inv_poly, inv2019_poly, fill = TRUE)
 
-##add BEC for all rows
+##BEC
 
-bec <- distinct(inv_poly[Layer %in% "2019", .(id, BEC, subBEC, vaBEC)])
-inv_poly[, c("BEC", "subBEC", "vaBEC") := NULL]
-inv_poly <- merge(inv_poly, bec, by = "id", all.x = TRUE)
+unique(inv_poly[Layer %in% "2003"]$vaBEC)
+#[1] "1" "3" NA  "2" "4"
+
+unique(inv_poly[Layer %in% "2019"]$vaBEC)
+#[1] "1" "3" NA  "2" "4"
+
+inv_poly$vaBEC <- as.character(inv_poly$vaBEC)
+inv_poly[Layer %in% "2003" & vaBEC %in% NA, vaBEC := ""]
+inv_poly[Layer %in% "2019" & vaBEC %in% NA, vaBEC := ""]
+inv_poly[Layer %in% "2003" | Layer %in% "2019",BEC_sub_va := paste0(BEC,subBEC, vaBEC)]
+
+##ids that bec zone from ITSL survey is different from VRI
+
+id <- NULL
+for (i in unique(inv_poly$id)){
+  bec03 <- inv_poly[id %in% i & Layer %in% "2003", unique(BEC_sub_va)]
+  bec19 <- inv_poly[id %in% i & Layer %in% "2019", unique(BEC_sub_va)]
+  bec <- inv_poly[id %in% i & Layer %in% "L1/L2", unique(BEC_sub_va)]
+
+  if(bec03 == bec19 & bec19 == bec){
+    tmpid <- NULL
+    id <- c(id, tmpid)
+  }else{
+    tmpid <- i
+    id <- c(id, tmpid)
+  }
+}
+
+##Add bec for layer
+
+bec <- distinct(inv_poly[,.(id, Layer, BEC, subBEC, vaBEC, BEC_sub_va)])
+inv_layer <- merge(inv_layer, bec, by = c("id", "Layer"))
 
 #inv_poly <- relocate(inv_poly,BEC, subBEC, vaBEC, .before = SP)
 

@@ -8,9 +8,32 @@ library(tidyr)
 library(reshape2)
 library(dplyr)
 
-ITSL_poly <- data.table(read.csv("//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly.csv"))
-ITSL_layer <- data.table(read.csv("//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer.csv"))
-ITSL_layer_sp <- data.table(read.csv("//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer_sp.csv"))
+ITSL_poly <- data.table(read.csv("//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly_VRI0319.csv"))
+ITSL_layer <- data.table(read.csv("//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer_VRI0319.csv"))
+
+unique(ITSL_layer$SP)
+
+# [1] "PL"  "FD"  "S"   ""    "SE"  "AT"  "CW"  "PLI" "BL"  "B"   "H"   "SW"  "SX"  "AC"
+# [15] "EP"  "F"   "E"   "C"   "PA"  "FDI" "HW"  "SXL" "LW"  "PY"  "PW"  "ACT"
+
+ITSL_layer[SP %in% c("PL", "PLI"), SP := "PL"]
+ITSL_layer[SP %in% c("FD", "FDI", "F"), SP := "FD"]
+ITSL_layer[SP %in% c("CW", "C"), SP := "CW"]
+ITSL_layer[SP %in% c("SX", "SXL"), SP := "SX"]
+ITSL_layer[SP %in% c("AC", "ACT"), SP := "AC"]
+ITSL_layer[SP %in% "", SP := "UNK"]
+
+data <- ITSL_layer[Layer %in% "2003", .(id, SP, PCT)]
+data[SP %in% "PL" & PCT >= 70 & PCT != 100]
+pid <- data[SP %in% "PL" & PCT >= 70, unique(id)]
+data1 <- data[! id %in% pid]
+data1 <- data1[,.(SP = paste(SP,PCT)),by= id]
+data1[, SPcomp := Reduce(paste, SP), by=id]
+data1[,SP := NULL]
+data1 <- unique(data1)
+data1 <- data1[, .N, by = SPcomp]
+setorder(data1,-N)
+data1
 
 ITSL_poly[,.N, by = BEC]
 
@@ -59,14 +82,16 @@ ITSL_poly[,.N, by = TSA]
 # 6:    Williams Lake 115
 
 
+#####abundance and distribution of regeneration
 
+regen <- ITSL_layer[Layer %in% "L3/L4"]
 
+a <- regen[,.(N1 = sum(PCT, na.rm = TRUE)), by = .(SP, BEC_sub_va)]
+a[,N2 := sum(N1), by = BEC_sub_va]
+a[,PCT := round(100*N1/N2, digits = 0)]
 
-
-
-
-
-
+a <- a[order(a$BEC_sub_va)]
+print(a, nrows = 103)
 
 
 

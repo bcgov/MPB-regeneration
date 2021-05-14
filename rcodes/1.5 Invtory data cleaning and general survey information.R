@@ -58,9 +58,7 @@ unique(invdata$vaBEC)
 
 class(invdata$vaBEC)
 invdata$vaBEC <- as.character(invdata$vaBEC)
-
 invdata[vaBEC %in% NA, vaBEC := ""]
-
 invdata[,BEC_sub_va := paste0(BEC,subBEC, vaBEC)]
 invdata_BEC <- distinct(invdata[,.(id,BEC_sub_va)])
 invdata_BEC[, .N, by = BEC_sub_va]
@@ -146,19 +144,19 @@ data
 #Divide the Invdata into two files
 #1. tree level #NOTE: BA is ba/ha
 
-InvTree <- invdata[,.(Opening, Plot,id, Layer, Inventory_Standard, BEC, BEC_sub_va, SP, PCT, Age, Ht, Count, BAF, Prismcount)]
+InvTree <- invdata[,.(Opening, Plot,id, Layer, Inventory_Standard, BEC, subBEC, vaBEC, BEC_sub_va, SP, PCT, Age, Ht, Count, BAF, Prismcount)]
 
 ##There might have duplicated species in one layer due to species name unify. Merge the same species in the same layer together
 
 tree2003 <- InvTree[Layer %in% "2003"]
 tree2019 <- InvTree[Layer %in% "2019"]
-treeps <- InvTree[Layer %in% "L1/L2",.(Opening = unique(Opening), Plot = unique(Plot), Layer = unique(Layer), Inventory_Standard = unique(Inventory_Standard), BEC = unique(BEC), BEC_sub_va = unique(BEC_sub_va), PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAF = 5, Prismcount = sum(Prismcount, na.rm = TRUE)), by=.(id,SP)]
+treeps <- InvTree[Layer %in% "L1/L2",.(Opening = unique(Opening), Plot = unique(Plot), Layer = unique(Layer), Inventory_Standard = unique(Inventory_Standard), BEC = unique(BEC), subBEC = unique(subBEC), vaBEC = unique(vaBEC), BEC_sub_va = unique(BEC_sub_va), PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE), BAF = 5, Prismcount = sum(Prismcount, na.rm = TRUE)), by=.(id,SP)]
 treeps[Age %in% NaN, Age := NA]
 treeps[Ht %in% NaN, Ht := NA]
-treeregen <- InvTree[Layer %in% "L3/L4",.(Opening = unique(Opening), Plot = unique(Plot), Layer = unique(Layer), Inventory_Standard = unique(Inventory_Standard), BEC = unique(BEC), BEC_sub_va = unique(BEC_sub_va),PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE),BAF = 5, Prismcount = sum(Prismcount, na.rm = TRUE)), by=.(id,SP)]
+treeregen <- InvTree[Layer %in% "L3/L4",.(Opening = unique(Opening), Plot = unique(Plot), Layer = unique(Layer), Inventory_Standard = unique(Inventory_Standard), BEC = unique(BEC), subBEC = unique(subBEC), vaBEC = unique(vaBEC), BEC_sub_va = unique(BEC_sub_va),PCT = NA, Age = mean(Age, na.rm = TRUE), Ht = mean(Ht, na.rm = TRUE), Count = sum(Count, na.rm = TRUE),BAF = 5, Prismcount = sum(Prismcount, na.rm = TRUE)), by=.(id,SP)]
 treeregen[Age %in% NaN, Age := NA]
 treeregen[Ht %in% NaN, Ht := NA]
-treedead <- InvTree[Layer %in% "Dead",.(Opening = unique(Opening), Plot = unique(Plot), Layer = unique(Layer), Inventory_Standard = unique(Inventory_Standard), BEC = unique(BEC), BEC_sub_va = unique(BEC_sub_va), PCT = 100, Age = NA, Ht = NA, Count = NA, BAF = 5, Prismcount = sum(Prismcount, na.rm = TRUE)), by=.(id,SP)]
+treedead <- InvTree[Layer %in% "Dead",.(Opening = unique(Opening), Plot = unique(Plot), Layer = unique(Layer), Inventory_Standard = unique(Inventory_Standard), BEC = unique(BEC), subBEC = unique(subBEC), vaBEC = unique(vaBEC), BEC_sub_va = unique(BEC_sub_va), PCT = 100, Age = NA, Ht = NA, Count = NA, BAF = 5, Prismcount = sum(Prismcount, na.rm = TRUE)), by=.(id,SP)]
 
 invtree <- rbind(tree2003,tree2019,treeps,treedead,treeregen)
 
@@ -169,7 +167,7 @@ invtree[Layer %in% "L1/L2", PCT := round(100*Count/sum(Count, na.rm = TRUE), dig
 invtree[Layer %in% "L3/L4", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = id]
 # setorder(invtree, id)
 
-write.csv(InvTree,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv", row.names = FALSE)
+write.csv(invtree,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv", row.names = FALSE)
 
 #2. stand level
 
@@ -184,7 +182,7 @@ invdata[Layer %in% "L1/L2", Stand_BA := sum(BAF*Prismcount, na.rm = TRUE), by = 
 invdata[Layer %in% "L3/L4", Stand_BA := sum(BAF*Prismcount, na.rm = TRUE), by = id]
 invdata[Layer %in% "Dead", Stand_BA := sum(BAF*Prismcount, na.rm = TRUE), by = id]
 
-Invstand <- distinct(invdata[,.(Opening, Plot,id, Layer, Inventory_Standard, BEC, BEC_sub_va, Stand_SI, Stand_CC, Stand_QMD125, Stand_TPH, Stand_BA, Stand_VOL125, Survey_Date, Dist_year, Kill_PCT)])
+Invstand <- distinct(invdata[,.(Opening, Plot,id, Layer, Inventory_Standard, BEC, subBEC, vaBEC, BEC_sub_va, Stand_SI, Stand_CC, Stand_QMD125, Stand_TPH, Stand_BA, Stand_VOL125, Survey_Date, Dist_year, Kill_PCT)])
 
 write.csv(Invstand,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly.csv", row.names = FALSE)
 
