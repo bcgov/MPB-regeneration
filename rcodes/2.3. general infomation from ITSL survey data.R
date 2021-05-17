@@ -35,7 +35,7 @@ data1 <- data1[, .N, by = SPcomp]
 setorder(data1,-N)
 data1
 
-ITSL_poly[,.N, by = BEC]
+ITSL_poly[Layer %in% "L1/L2",.N, by = BEC_sub_va]
 
 # BEC      N
 # IDFdk1  46
@@ -94,7 +94,6 @@ a <- a[order(a$BEC_sub_va)]
 print(a, nrows = 103)
 
 
-
-
-
+write.csv(ITSL_poly, "//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly_VRI0319.csv", row.names = FALSE, na = "")
+write.csv(ITSL_layer, "//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer_VRI0319.csv", row.names = FALSE, na = "")
 
