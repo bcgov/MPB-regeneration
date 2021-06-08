@@ -78,5 +78,16 @@ invpoly[Data_Source %in% "ITSL", ':=' (BEC = pbec$BEC,
                                        vaBEC = pbec$vaBEC,
                                        BEC_sub_va = pbec$BEC_sub_va)]
 
+##Add survey date for ITSL data
+
+ITSL_poly <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly.csv",header = TRUE))
+sd <- distinct(ITSL_poly[,.(id, SurveyDate)])
+sd[,id := id + 326]
+for ( i in unique(invpoly[Data_Source %in% "ITSL",id])){
+  surveydate <- sd[id %in% i, SurveyDate]
+  invpoly[id %in% i & Layer %in% "L1/L2", Survey_Date := surveydate]
+  invpoly[id %in% i & Layer %in% "L3/L4", Survey_Date := surveydate]
+}
+
 write.csv(invlayer, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_layer.csv", row.names = FALSE, na = "")
 write.csv(invpoly, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_poly.csv", row.names = FALSE, na = "")
