@@ -170,7 +170,11 @@ for(i in bec){
       readline(paste0("id ", id," , ",j, "th plot of total ", length(tmp), " , Check next plot?"))
     }
   }
-  readline(paste(i, "is done, Check next beczone?"))
+  if(i != bec[length(bec)]){
+    readline(paste(i, "is done, Check next beczone?"))
+  }else{
+    readline(paste(i, "is done, this is the last beczone:)"))
+  }
 }
 
 
