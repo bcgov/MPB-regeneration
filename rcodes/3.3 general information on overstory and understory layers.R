@@ -178,15 +178,6 @@ for(i in bec){
 }
 
 
-for(i in 1:length(spcomp_bec)){
-  print(fig_spcomp[[i]])
-  id <- names(fig_spcomp)[i]
-
-}
-
-
-
-
 # fig_spcomp <- list()
 # for ( i in 1:length(layer)){
 # #  i<-1
