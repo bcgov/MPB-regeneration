@@ -17,16 +17,11 @@ under2 <- data.table(read.xlsx("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/
 under2 <- under2[1:324]
 under <- rbind(under1, under2, fill = TRUE)
 
-over1 <- data.table(read.xlsx("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/raw data/Lillooet undestory/Lillooet_Combined_Field_Plots.xlsx" ,
+over <- data.table(read.xlsx("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/raw data/Lillooet undestory/Lillooet_Combined_Field_Plots.xlsx" ,
                              sheet = "Sheet1",
                              colNames = TRUE,
                              detectDates = TRUE))
-over2 <- data.table(read.xlsx("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/raw data/Lillooet undestory/Lillooet_Combined_Field_Plots.xlsx" ,
-                              sheet = "Sheet2",
-                              colNames = TRUE,
-                              detectDates = TRUE))
 
-over <- rbind(over1, over2)
 
 id <- unique(under$`PLOT.#`)
 
