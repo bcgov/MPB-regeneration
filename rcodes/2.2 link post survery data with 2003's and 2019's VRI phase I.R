@@ -77,20 +77,39 @@ ITSL_layer <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliG
 #invdata[,c("GPSlat","GPSlong","Long","Lat") := NULL]
 
 ITSL_layer$Layer <- as.character(ITSL_layer$Layer)
-ITSL_layer[Layer %in% "1" | Layer %in% "2", Layer := "L1/L2"]
-ITSL_layer[Layer %in% "3" | Layer %in% "4", Layer := "L3/L4"]
 
-invITSL_layer <- ITSL_layer[, .(PCT = sum(PCT), AGE = mean(AGE), HT = mean(HT)), by = .(id, Layer, SP)]
-invITSL_layer[,sumPCT := sum(PCT), by = .(id, Layer)]
-invITSL_layer <- invITSL_layer[,PCT := round(100*PCT/sumPCT, digits = 2), by = .(id, Layer, SP)]
-invITSL_layer[,sumPCT := NULL]
+##Multiple SP's PCT to TT count to get SP's count for each layer
 
-invITSL_layer$Inventory_Standard = "ITSL"
+ITSL_count <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_count.csv",header = TRUE))
+ITSL_count$Layer <- as.character(ITSL_count$Layer)
 
-setnames(invITSL_layer, "AGE", "Age")
-setnames(invITSL_layer, "HT", "Ht")
+count <- distinct(ITSL_count[,.(id, Layer, TT)])
+layer_count <- merge(ITSL_layer, count, by = c("id", "Layer"), all.x = TRUE)
+layer_count[TT %in% 0, TT := 1]
+layer_count[, Count := round(PCT*TT/100, digits = 1)]
+layer_count <- layer_count[!PCT %in% 0]
 
-inv_layer <- rbind(inv2003_layer, invITSL_layer, fill= TRUE)
+layer_count[PCT %in% NA]
+#     id Layer SP PCT AGE HT TT Count
+# 1: 310 L3/L4  S  NA  NA NA  4    NA
+
+layer_count[id %in% 310 & Layer %in% "3" & SP %in% "S", Count := 4]
+
+layer_count[Layer %in% "1" | Layer %in% "2", Layer := "L1/L2"]
+layer_count[Layer %in% "3" | Layer %in% "4", Layer := "L3/L4"]
+
+layer_count1 <- layer_count[, .(Count = sum(Count, na.rm = TRUE), AGE = mean(AGE, na.rm = TRUE), HT = mean(HT, na.rm = TRUE)), by = .(id, Layer, SP)]
+layer_count1[,sumCount := sum(Count), by = .(id, Layer)]
+layer_count1[,PCT := round(100*Count/sumCount, digits = 1)]
+layer_count1[,sumCount := NULL]
+layer_count1[AGE %in% NaN, AGE := NA]
+layer_count1[HT %in% NaN, HT := NA]
+
+layer_count1$Inventory_Standard = "ITSL"
+setnames(layer_count1, "AGE", "Age")
+setnames(layer_count1, "HT", "Ht")
+
+inv_layer <- rbind(inv2003_layer, layer_count1, fill= TRUE)
 
 ##POLY file
 
