@@ -91,3 +91,19 @@ for ( i in unique(invpoly[Data_Source %in% "ITSL",id])){
 
 write.csv(invlayer, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_layer.csv", row.names = FALSE, na = "")
 write.csv(invpoly, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_poly.csv", row.names = FALSE, na = "")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
