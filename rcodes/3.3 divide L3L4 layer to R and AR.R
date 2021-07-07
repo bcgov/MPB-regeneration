@@ -24,3 +24,31 @@ invlayer[Layer %in% "L3/L4" & Age > interval, Layer := "AR"]
 invlayer[Layer %in% "AR"]
 
 write.csv(invlayer, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_layer.csv", row.names = FALSE)
+
+layer <- invlayer[Layer %in% "L3/L4"| Layer %in% "R" | Layer %in% "AR",]
+layer2 <- layer[,.(Inventory_Standard = unique(Inventory_Standard),
+                   BEC = unique(BEC),
+                   subBEC = unique(subBEC),
+                   vaBEC = unique(vaBEC),
+                   BEC_sub_va = unique(BEC_sub_va),
+                   Count = sum(Count, na.rm = TRUE),
+                   Prismcount = sum(Prismcount, na.rm = TRUE),
+                   Survey_Date = unique(Survey_Date),
+                   Data_Source = unique(Data_Source)),
+                by = .(id, Layer)]
+poly <- layer2[,.(id,
+                  Layer,
+                  Inventory_Standard,
+                  BEC,
+                  subBEC,
+                  vaBEC,
+                  BEC_sub_va,
+                  Stand_TPH = Count *200,
+                  Survey_Date,
+                  Data_Source)]
+
+invpoly <- invpoly[!Layer %in% "L3/L4"]
+invpoly <- rbind(invpoly,poly, fill= TRUE)
+invpoly[order(id)]
+
+write.csv(invpoly, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_poly.csv", row.names = FALSE)
