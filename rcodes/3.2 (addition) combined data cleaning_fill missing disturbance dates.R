@@ -9,8 +9,9 @@ invpoly <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/
 
 ##Fill the missing disturbance date using its neighborhood's disturbance date
 #1.add gps for arcGIS
+#Using ArcGIS to get the neighbohood's disturbance date
 
-date <- invpoly[Layer %in% "2019", .(id, Dist_year)]
+distdate <- invpoly[Layer %in% "2019", .(id, Dist_year)]
 valid <- date[!Dist_year %in% NA, id]
 novalid <- date[Dist_year %in% NA, id]
 
@@ -39,10 +40,8 @@ write.csv(novalidpgs, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled 
 
 #2.calculate the interval between the disturbance date and survey date
 
-disyear <- invpoly[Layer %in% "2019",.(id, Dist_year)]
 surveydate <- distinct(invpoly[Layer %in% "L1/L2" | Layer %in% "L3/L4",.(id, Survey_Date)])
-
-year <- merge(disyear, surveydate, by = "id")
+year <- merge(distdate, surveydate, by = "id")
 
 nodist <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/nodistyear_adddistyear.txt"))
 for ( i in unique(year[Dist_year %in% NA, id])){
@@ -52,7 +51,7 @@ for ( i in unique(year[Dist_year %in% NA, id])){
 
 year[,interval := Survey_Date - Dist_year]
 
-#3. ids that disturbance date is later than survey date
+#3. Check ids that disturbance date is later than survey date in arcGIS
 
 novalid2 <- year[interval <= 0, id]
 novalidgps2 <- gps[id %in% novalid2]
@@ -81,21 +80,24 @@ for(i in eraforid){
 
 #5.ITSL
 #use 2005 as disturbance date if Dist_Type is not IBM
-#id 716, 715, 714, 703, 601, 602, 604, 590, 591 is IBM but distdate is equal or later than survey date, change them to 2005
+#Use 2005 if Survey date is later than disturbance date
 
 test <- invpoly[Data_Source %in% "ITSL" & Layer %in% "2019",.(id,Dist_Type)]
 test <- merge(year, test, by = "id", all.x = FALSE, all.y = TRUE)
 
 invpoly[Data_Source %in% "ITSL" & Layer %in% 2019 & Dist_year %in% NA, Dist_year := 2005]
 
-tmpid <- invpoly[Data_Source %in% "ITSL" & Layer %in% 2019 & Dist_Type %in% "",id]
-tmp <- ITSLgps[id %in% tmpid]
-tmp2 <- merge(tmp, surveydate, by = "id", all.y = FALSE)
-setnames(tmp2,"Survey_Date","survey")
-write.csv(tmp2, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/itsl_nodistype.csv", row.names = FALSE)
+tmpid <- test[!Dist_Type %in% "IBM",id]
+invpoly[id %in% tmpid & Layer %in% "2019", Dist_year := 2005]
+test2 <- test[id %in% tmpid, Dist_year := 2005]
+test2[,interval := Survey_Date - Dist_year]
+tmpid2 <- test2[interval <0, id]
+invpoly[id %in% tmpid2 & Layer %in% "2019", Dist_year := 2005]
+test2[id %in% tmpid2, Dist_year := 2005]
 
-ids <- c("716", "715", "714", "703", "601", "602", "604", "590", "591")
-invpoly[id %in% ids, Dist_year := 2005]
+write.csv(invpoly, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_poly_addistyear.csv", row.names = FALSE)
 
-write.csv(invpoly, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Combined/combined_poly.csv", row.names = FALSE)
+
+
+
 
