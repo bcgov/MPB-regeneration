@@ -3,14 +3,101 @@ library(data.table)
 library(quickPlot)
 library(ggplot2)
 
-InvTree <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv"))
-InvStand <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly_widetable.csv"))
+invlayer <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer_cleaned.csv"))
+invpoly <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly_cleaned.csv"))
 
 ##remove non-regeneration plots in InvTree and InvStand
 
 # n <- InvStand[Regen %in% "0", id]
 # InvStand <- InvStand[Regen %in% "1"]
 # InvTree <- InvTree[!id %in% n]
+
+###BEC distribution
+
+invdata_BEC <- distinct(invpoly[,.(id,BEC, BEC_sub_va)])
+invdata_BEC[, .N, by = BEC_sub_va]
+#    BEC_sub_va   N
+# 1:     SBSmc3   3
+# 2:     SBSdw2 144
+# 3:      SBSmw   6
+# 4:     SBSmc2   5
+# 5:     SBPSdc   4
+# 6:     SBSdw3  41
+# 7:     SBSmk1 117
+
+invdata_BEC[, .N, by = BEC]
+#     BEC   N
+# 1:  SBS 316
+# 2: SBPS   4
+
+##ALL SP comp before MPB (year 2003)
+
+data <- invdata[Layer %in% "2003",.(SP = paste(SP,PCT)),by= id]
+data[, SPcomp := Reduce(paste, SP), by=id]
+data[,SP := NULL]
+data <- unique(data)
+data <- data[, .N, by = SPcomp]
+setorder(data,-N)
+
+data
+#   SPcomp   N
+#  1:            PL 100 152
+#  2:       PL 90 SW 10  31
+#  3:        PL 95 AT 5  22
+#  4:       PL 90 AT 10   8
+#  5:   PL 90 AT 5 SW 5   6
+#  6:       PL 70 SB 30   5
+#  7: PL 60 AT 30 SW 10   5
+#  8: SW 40 FD 30 PL 25   5
+#  9:  AT 50 PL 30 S 20   5
+# 10:       PL 70 SW 30   4
+# 11:       PL 85 SW 15   4
+# 12:       PL 80 SW 20   3
+# 13: PL 60 SW 30 AT 10   3
+# 14:        PL 95 SW 5   3
+# 15: PL 80 SW 10 AT 10   3
+# 16:  PL 75 SW 20 AT 5   3
+# 17: PL 70 SW 20 AT 10   3
+# 18:  PL 85 AT 10 SW 5   3
+# 19:       PL 80 AT 20   3
+# 20:  PL 80 S 10 AT 10   3
+# 21:       SW 70 PL 30   2
+# 22:       PL 89 SW 11   2
+# 23:       PL 69 SW 31   2
+# 24:       PL 90 SB 10   2
+# 25:  PL 85 SW 10 AT 5   2
+# 26:  PL 70 AT 20 S 10   2
+# 27:       PL 50 AT 50   2
+# 28:       AT 60 PL 40   2
+# 29:        PL 90 S 10   2
+# 30:       PL 60 SB 40   1
+# 31:       SW 60 PL 40   1
+# 32: FD 50 PL 30 SW 20   1
+# 33: PL 70 FD 20 SW 10   1
+# 34:  FD 55 SW 38 PL 7   1
+# 35: PL 70 SW 20 FD 10   1
+# 36:   SW 90 PL 5 AT 5   1
+# 37:   PL 90 SW 5 AT 5   1
+# 38: PL 60 SW 30 SB 10   1
+# 39:  PL 71 SW 21 AT 8   1
+# 40: PL 60 SW 20 AT 20   1
+# 41:            FD 100   1
+# 42:  PL 85 AT 10 SB 5   1
+# 43: SW 70 PL 20 AC 10   1
+# 44: SW 70 PL 20 EP 10   1
+# 45: AC 60 SW 20 AT 20   1
+# 46:       AT 90 PL 10   1
+# 47:  AT 50 PL 40 S 10   1
+# 48:    PL 90 S 5 AT 5   1
+# 49: PL 40 SW 30 AT 20   1
+# 50:  PL 80 S 10 FD 10   1
+# 51: PL 55 AT 30 AC 15   1
+# 52:        PL 80 S 20   1
+# 53:  PL 50 AT 30 S 20   1
+# 54:  PL 80 AT 10 S 10   1
+# 55: SW 40 PL 40 BL 10   1
+# 56: PL 80 AT 10 SW 10   1
+# 57:       SW 80 BL 20   1
 
 #Add SP0 for all plots?
 ##Two plots (id 66 and 69 has no record for 2019's VRI, so the SP0 code for them are unkown)

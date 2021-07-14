@@ -99,11 +99,8 @@ invlayer <- rbind(tree2003,tree2019,treeps,treedead,treeregen)
 
 ##Calculate SP PCT
 
-invtree[Layer %in% "L1/L2", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = id]
-invtree[Layer %in% "L3/L4", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = id]
-
-
-write.csv(invlayer,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer.csv", row.names = FALSE)
+invlayer[Layer %in% "L1/L2", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = id]
+invlayer[Layer %in% "L3/L4", PCT := round(100*Count/sum(Count, na.rm = TRUE), digits = 1), by = id]
 
 ##Add BEC_sub_va
 
@@ -130,9 +127,9 @@ over <- invlayer[Layer %in% "L1/L2", .(overTPH = sum(Count, na.rm = TRUE)*200,
 under <- invlayer[Layer %in% "L3/L4", .(underTPH = sum(Count, na.rm = TRUE)*200), by = id]
 dead <- invlayer[Layer %in% "Dead",.(deadBA = sum(BAF*Prismcount, na.rm = TRUE)), by = id]
 
-invpoly1 <- merge(invpoly, over, by = "id")
-invpoly1 <- merge(invpoly1, under, by = "id")
-invpoly1 <- merge(invpoly1, dead, by = "id")
+invpoly1 <- merge(invpoly, over, by = "id", all.x = TRUE)
+invpoly1 <- merge(invpoly1, under, by = "id", all.x = TRUE)
+invpoly1 <- merge(invpoly1, dead, by = "id", all.x = TRUE)
 
 write.csv(invlayer,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_layer_cleaned.csv", row.names = FALSE)
 write.csv(invpoly1,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/From Erafor/Erafor_poly_cleaned.csv", row.names = FALSE)
