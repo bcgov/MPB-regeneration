@@ -11,13 +11,7 @@ library(tidyr)
 library(dplyr)
 options(stringsAsFactors = FALSE)
 
-datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
-datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
-
-ITSLdatapath <- file.path(datapath, "ITSL")
-ITSLdatapath_compiled<-file.path(datapath_compiled,"ITSL")
-
-ITSLdata <- data.table(read.xlsx(file.path(ITSLdatapath, "BCTS ITSL summary TOR 2020-12-16ch.xlsx"),
+ITSLdata <- data.table(read.xlsx("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/raw data/ITSL/BCTS ITSL summary TOR 2020-12-16ch.xlsx",
                                  sheet = "Scrape",
                                  detectDates = TRUE))
 
@@ -99,7 +93,12 @@ unique(ITSL_poly$SurveyDate)
 ITSL_poly[SurveyDate %in% "11//06/2018", SurveyDate := "2018"]
 ITSL_poly[SurveyDate %in% "24/07/2017", SurveyDate := "2017"]
 
-write.csv(ITSL_poly,file.path(ITSLdatapath_compiled, "ITSL_poly.csv"), row.names = FALSE)
+setnames(ITSL_poly, "BEC" , "BEC_sub_va")
+ITSL_poly[, BEC := gsub("[[:lower:]]+|([0-9]+).*", "", BEC_sub_va)]
+ITSL_poly[, subBEC := gsub("[[:upper:]]+|([0-9]+).*", "", BEC_sub_va)]
+ITSL_poly[, vaBEC := gsub("[[:upper:]]+|[[:lower:]]+", "", BEC_sub_va)]
+
+write.csv(ITSL_poly,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_poly.csv", row.names = FALSE)
 
 ##layer information, this inlcude two tables:
 ##1.ITSL_layer: total tree tallied, total conifer tallied and crown closure by layers
@@ -155,7 +154,7 @@ ITSL_count <- melt(data = ITSL_count,
                    variable.factor = FALSE)
 
 
-write.csv(ITSL_count,file.path(ITSLdatapath_compiled, "ITSL_count.csv"), row.names = FALSE)
+write.csv(ITSL_count,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_count.csv", row.names = FALSE)
 
 ###2. ITSL_layer_sp
 
@@ -394,8 +393,8 @@ idlocation[id %in% 666]
 
 layer_sp <- layer_sp[!c(id %in% 666 & PCT %in% 0)]
 
-write.csv(layer_sp,file.path(ITSLdatapath_compiled, "ITSL_layer.csv"), row.names = FALSE)
-write.csv(ITSL_poly,file.path(ITSLdatapath_compiled, "ITSL_poly.csv"), row.names = FALSE)
+write.csv(layer_sp,"J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer.csv", row.names = FALSE)
+
 
 
 
