@@ -11,8 +11,8 @@ invpoly <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/
 
 ##fill NA dist_year using neighbour's value
 
-distdate <- invpoly[,.(id,Dist_year,Dist_Type, Survey_Date, Long, Lat)]
-distplot <- ggplot(data = distdate, aes(x = Long, y = Lat, color = as.character(Dist_year), label = Survey_Date))+
+distdate <- invpoly[,.(id,Dist_year = as.character(Dist_year),Dist_Type, Survey_Date, Long, Lat)]
+distplot <- ggplot(data = distdate, aes(x = Long, y = Lat, color = Dist_year, label = Survey_Date, label2 = Dist_Type, label3 = id))+
   geom_point()+
   geom_text(data = distdate[!Dist_Type %in% "IBM"], aes(label = id), nudge_y = 150)+
   theme_bw()

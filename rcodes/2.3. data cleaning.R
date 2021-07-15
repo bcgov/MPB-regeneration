@@ -1,6 +1,3 @@
-###########################
-#####ITSL data summary#####
-###########################
 
 rm(list=ls())
 library(data.table)
@@ -42,5 +39,5 @@ for(i in unique(ITSL_layer$id)){
 }
 
 
-write.csv(ITSL_layer, "//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer_VRI0319.csv_cleaned", row.names = FALSE, na = "")
+write.csv(ITSL_layer, "//orbital/s63016/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/ITSL/ITSL_layer_VRI0319_cleaned.csv", row.names = FALSE, na = "")
 
