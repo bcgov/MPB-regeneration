@@ -33,17 +33,16 @@ id[!is.element(id, unique(over$Call_Num))]
 id[15] <-"4210U_R3"
 id[16] <- "4209U_R3"
 id[29] <- "4212U_3PT"
-
-#id[8] <- "541U_3PT"
-#id[17] <- "1908U_3PT
+id[8] <- "541U_3PT"
+id[!id %in% "1908U_3PTQC"]
 
 newover <- over[Call_Num %in% id]
 
 under[`PLOT.#` %in% "4210U_3PT", `PLOT.#` := "4210U_R3"]
 under[`PLOT.#` %in% "4209U_3PT", `PLOT.#` := "4209U_R3"]
 under[`PLOT.#` %in% "4212_U3PT", `PLOT.#` := "4212U_3PT"]
-newunder <- under[!`PLOT.#` %in% "540U_3PT"]
-newunder <- newunder[!`PLOT.#` %in% "1908U_3PTQC"]
+under[`PLOT.#` %in% "540U_3PT", `PLOT.#` := "541U_3PT"]
+newunder <- under[!`PLOT.#` %in% "1908U_3PTQC"]
 
 
 write.csv(newover, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory.csv", row.names = FALSE)
