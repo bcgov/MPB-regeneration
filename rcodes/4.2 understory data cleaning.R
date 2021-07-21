@@ -1,4 +1,4 @@
-
+rm(list = ls())
 library(data.table)
 library(tidyr)
 
@@ -61,7 +61,7 @@ test <- separate(lead_sp,
 test2 <- melt(test,
               id.vars = c("Plot", "Point", "Class", "Age", "Ht"),
               measure.vars = c("SP1", "SP2"),
-              value.name = "SP")
+              value.name = "SP") %>% data.table
 test2 <- test2[!SP %in% ""]
 test2 <- test2[!SP%in% NA]
 test2[,variable := NULL]
