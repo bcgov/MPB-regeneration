@@ -23,16 +23,16 @@ inv2003_SP1 <- data.table(id = invdata_2003$id,
                           Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
                           SP = invdata_2003$SPECIES_CD_1,
                           PCT = invdata_2003$SPECIES_PCT_1,
-                          AGE = invdata_2003$PROJ_AGE_1,
-                          HT = invdata_2003$PROJ_HEIGHT_1)
+                          Age = invdata_2003$PROJ_AGE_1,
+                          Ht = invdata_2003$PROJ_HEIGHT_1)
 
 inv2003_SP2 <- data.table(id = invdata_2003$id,
                           Layer = 2003,
                           Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
                           SP = invdata_2003$SPECIES_CD_2,
                           PCT = invdata_2003$SPECIES_PCT_2,
-                          AGE = invdata_2003$PROJ_AGE_2,
-                          HT = invdata_2003$PROJ_HEIGHT_2)
+                          Age = invdata_2003$PROJ_AGE_2,
+                          Ht = invdata_2003$PROJ_HEIGHT_2)
 
 inv2003_SP2 <- inv2003_SP2[!SP %in% ""]
 
@@ -41,8 +41,8 @@ inv2003_SP3 <- data.table(id = invdata_2003$id,
                           Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
                           SP = invdata_2003$SPECIES_CD_3,
                           PCT = invdata_2003$SPECIES_PCT_3,
-                          AGE = NA,
-                          HT = NA)
+                          Age = NA,
+                          Ht = NA)
 
 inv2003_SP3 <- inv2003_SP3[!SP %in% ""]
 
@@ -51,8 +51,8 @@ inv2003_SP4 <- data.table(id = invdata_2003$id,
                           Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
                           SP = invdata_2003$SPECIES_CD_4,
                           PCT = invdata_2003$SPECIES_PCT_4,
-                          AGE = NA,
-                          HT = NA)
+                          Age = NA,
+                          Ht = NA)
 
 inv2003_SP4 <- inv2003_SP4[!SP %in% ""]
 
@@ -61,13 +61,15 @@ inv2003_SP5 <- data.table(id = invdata_2003$id,
                           Inventory_Standard = invdata_2003$INVENTORY_STANDARD_CD,
                           SP = invdata_2003$SPECIES_CD_5,
                           PCT = invdata_2003$SPECIES_PCT_5,
-                          AGE = NA,
-                          HT = NA)
+                          Age = NA,
+                          Ht = NA)
 
 inv2003_SP5 <- inv2003_SP5[!SP %in% ""]
 
 inv2003_layer <- rbind(inv2003_SP1,inv2003_SP2,inv2003_SP3, inv2003_SP4, inv2003_SP5)
 
+setnames(ITSL_layer, "AGE", "Age")
+setnames(ITSL_layer, "HT", "Ht")
 invlayer <- rbind(ITSL_layer, inv2003_layer, fill=TRUE)
 
 ##VRI 2019 data cleaning
@@ -95,16 +97,16 @@ inv2019_SP1 <- data.table(id = invdata_2019$id,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
                           SP = invdata_2019$SPECIES_CD_1,
                           PCT = invdata_2019$SPECIES_PCT_1,
-                          AGE = invdata_2019$PROJ_AGE_1,
-                          HT = invdata_2019$PROJ_HEIGHT_1)
+                          Age = invdata_2019$PROJ_AGE_1,
+                          Ht = invdata_2019$PROJ_HEIGHT_1)
 
 inv2019_SP2 <- data.table(id = invdata_2019$id,
                           Layer = 2019,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
                           SP = invdata_2019$SPECIES_CD_2,
                           PCT = invdata_2019$SPECIES_PCT_2,
-                          AGE = invdata_2019$PROJ_AGE_2,
-                          HT = invdata_2019$PROJ_HEIGHT_2)
+                          Age = invdata_2019$PROJ_AGE_2,
+                          Ht = invdata_2019$PROJ_HEIGHT_2)
 
 inv2019_SP2 <- inv2019_SP2[!SP %in% ""]
 
@@ -113,8 +115,8 @@ inv2019_SP3 <- data.table(id = invdata_2019$id,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
                           SP = invdata_2019$SPECIES_CD_3,
                           PCT = invdata_2019$SPECIES_PCT_3,
-                          AGE = NA,
-                          HT = NA)
+                          Age = NA,
+                          Ht = NA)
 
 inv2019_SP3 <- inv2019_SP3[!SP %in% ""]
 
@@ -123,8 +125,8 @@ inv2019_SP4 <- data.table(id = invdata_2019$id,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
                           SP = invdata_2019$SPECIES_CD_4,
                           PCT = invdata_2019$SPECIES_PCT_4,
-                          AGE = NA,
-                          HT = NA)
+                          Age = NA,
+                          Ht = NA)
 
 inv2019_SP4 <- inv2019_SP4[!SP %in% ""]
 
@@ -133,8 +135,8 @@ inv2019_SP5 <- data.table(id = invdata_2019$id,
                           Inventory_Standard = invdata_2019$INVENTORY_STANDARD_CD,
                           SP = invdata_2019$SPECIES_CD_5,
                           PCT = invdata_2019$SPECIES_PCT_5,
-                          AGE = NA,
-                          HT = NA)
+                          Age = NA,
+                          Ht = NA)
 
 inv2019_SP5 <- inv2019_SP5[!SP %in% ""]
 
