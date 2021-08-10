@@ -40,4 +40,4 @@ newdistdate <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_Wenli
 newdistdate_1 <- newdistdate[,.(Plot, Dist_year, Survey_Date)]
 vri2019_poly[,Dist_year := NULL]
 vri2019_poly_1 <- merge(vri2019_poly, newdistdate_1, by = "Plot", all = TRUE)
-write.csv(vri2019_poly_1, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory_VRI2019_AddDistDate.csv")
+write.csv(vri2019_poly_1, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory_VRI2019_AddDistDate.csv", row.names = FALSE)
