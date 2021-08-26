@@ -5,6 +5,10 @@ under <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/co
 vri <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory_VRI2019_AddDistDate.csv"))
 dist <- vri[,.(Plot, Dist_year,Survey_Date)]
 
+##Extract regen from understory
+##Based on the criteria: regen started after MPB disturbance
+##give 5 year buffer for disturbance
+
 newunder <- merge(under, dist, by = "Plot")
 newunder[,interval := Survey_Date-Dist_year]
 newunder[,max := interval+5]
