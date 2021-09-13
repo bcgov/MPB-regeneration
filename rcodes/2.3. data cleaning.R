@@ -10,8 +10,8 @@ ITSL_layer <- data.table(read.csv("//orbital/s63016/!Workgrp/Inventory/MPB regen
 
 unique(ITSL_layer$SP)
 
-# [1] "PL"  "FD"  "S"   ""    "SE"  "AT"  "CW"  "PLI" "BL"  "B"   "H"   "SW"  "SX"  "AC"
-# [15] "EP"  "F"   "E"   "C"   "PA"  "FDI" "HW"  "SXL" "LW"  "PY"  "PW"  "ACT"
+# [1] "FD"  "PL"  ""    "SX"  "BL"  "AC"  "S"   "PLI" "AT"  "EP"  "FDI" "B"   "SE"  "CW"  "ACT" "PY"  "SW"  "PA"  "HW"
+# [20] "LW"  "SXL" "PW"  "H"
 
 ITSL_layer[SP %in% c("PL", "PLI"), SP := "PL"]
 ITSL_layer[SP %in% c("FD", "FDI", "F"), SP := "FD"]

@@ -346,18 +346,17 @@ layer_sp <- layer_sp[!SP %in% NA]
 # "Hw"
 # "Se"
 
-layer_sp[SP %in% c("Fdi", "Fdi ", " Fdi"), SP := "F"]
+layer_sp[SP %in% c("Fdi", "Fdi ", " Fdi"), SP := "FD"]
 layer_sp[SP %in% c("Pli", "Pli ", "Pl"), SP := "PL"]
-layer_sp[SP %in% c("Sx",  "Sx ", "SX"), SP := "S"]
-layer_sp[SP %in% c("Bl",  "Bl ", "BL"), SP := "B"]
-layer_sp[SP %in% "Act", SP := "AC"]
-layer_sp[SP %in% "Ep", SP := "E"]
+layer_sp[SP %in% c("Sx",  "Sx ", "SX"), SP := "SX"]
+layer_sp[SP %in% c("Bl",  "Bl ", "BL"), SP := "BL"]
+layer_sp[SP %in% c("Act","Ac"), SP := "AC"]
+layer_sp[SP %in% "Ep", SP := "EP"]
 layer_sp[SP %in% c("At", "At ", "AT"), SP := "AT"]
-layer_sp[SP %in% "Cw", SP := "C"]
-layer_sp[SP %in% "Ac", SP := "AC"]
+layer_sp[SP %in% "Cw", SP := "CW"]
 layer_sp[SP %in% "Pa", SP := "PA"]
-layer_sp[SP %in% "Hw", SP := "H"]
-layer_sp[SP %in% "Se", SP := "S"]
+layer_sp[SP %in% "Hw", SP := "HW"]
+layer_sp[SP %in% "Se", SP := "SE"]
 
 ### check if there are duplicate species in one layer
 
