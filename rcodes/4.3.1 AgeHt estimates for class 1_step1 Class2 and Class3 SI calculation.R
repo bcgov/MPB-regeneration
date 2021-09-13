@@ -362,7 +362,7 @@ for (i in 1:dim(pacl23)[1]){
     ESSF <- 0
   }
   f_SI <- function(SI){
-    (0.0009952 + 0.0005208 * ICH - 0.0006785 * IDF - 0.0008774 * (MS + SBPS)) * SI * A^(0.9842 + 0.2521 * BWBS - 0.2893 * (ESSF + IDF) + 0.5893 * (ICH + MS + SBPS + SBS) + (0.02943 - 0.008403 * BWBS - 0.01388 * ICH + 0.02672 * (IDF + MS) - 0.03586 * SBS) * SI) * (1.017 + 0.03818 * (ESSF + SBS) - 0.04231 * ICH - 0.07806 * MS)^A - H
+    (0.001424 - 0.0009260 * (IDF + SBPS) + 0.0008032 * SBS) * SI * A^(1.801 + 0.07098 * (BWBS + MS) + 0.3509 * (ICH + SBPS) + (0.01820 - 0.003024 * ESSF - 0.01257 * ICH + 0.01581 * IDF) * SI) * (0.9537 - 0.01083 * (BWBS + ICH + MS) - 0.02025 * SBS)^A - H
   }
 
   si <- round(uniroot(f_SI, c(0, 50))$root, digits = 2)
