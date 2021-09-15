@@ -9,7 +9,7 @@ library(zoo)
 library(dplyr)
 options(stringsAsFactors = FALSE)
 
-source("./rcodes/1.1 readdata from Erafor_function.R")
+source("./rcodes/1.1 Erafor_readdata from Erafor_function.R")
 
 datapath <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\raw data"
 datapath_compiled <- "\\\\orbital\\s63016\\!Workgrp\\Inventory\\MPB regeneration_WenliGrp\\compiled data"
