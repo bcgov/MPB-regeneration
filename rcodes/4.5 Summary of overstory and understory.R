@@ -3,7 +3,8 @@ library(data.table)
 library(ggplot2)
 library(quickPlot)
 
-regen <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/understory_cleaned_SI_Cl1Updated_regen.csv"))
+under <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/understory_cleaned_SI_Cl1Updated_regen.csv"))
+regen <- under[Class %in% "R"]
 
 regen[,.(sum(Count)*200/28), by = SP]
 

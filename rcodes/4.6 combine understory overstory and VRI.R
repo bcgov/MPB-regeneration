@@ -126,7 +126,6 @@ setorder(vri2003_layer, Plot)
 
 vri2019_poly <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory_VRI2019_AddDistDate.csv"))
 vri2019_poly <- vri2019_poly[Plot %in% p]
-poly <- merge(poly, vri2019_poly, by = "Plot")
 
 vri2019 <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory_VRI2019.txt"))
 vri2019 <- vri2019[Call_Num %in% p]
@@ -168,7 +167,7 @@ setorder(vri2019_layer, Plot)
 
 layer <- rbind(under1, over_layer, fill = TRUE)
 layer <- rbind(layer, vri2003_layer, fill = TRUE)
-layer[Layer %in% c("1", "2", "3", "O", "D"), Inv_Standard := "Lillooet"]
+layer[Layer %in% c("U1", "U2", "U3", "O", "D", "R"), Inv_Standard := "Lillooet"]
 layer <- rbind(layer, vri2019_layer, fill=TRUE)
 
 bec <- unique(layer[!BEC %in% NA,.(Plot, BEC, subBEC,vaBEC)])
@@ -189,6 +188,10 @@ layer[Layer %in% 2019, Survey_Date := 2019]
 poly <- merge(over_poly1, vri2003_poly, by = "Plot")
 undertph <- under1[,.(underTPh = sum(Count)*200), by = Plot]
 poly <- merge(poly,undertph,by="Plot")
+regentph <- under1[Layer %in% "R",.(regenTPH = sum(Count)*200), by = Plot]
+poly <- merge(poly, regentph, by = "Plot", all.x = TRUE)
+poly[regenTPH %in% NA, regenTPH := 0]
+poly <- merge(poly, vri2019_poly, by = "Plot")
 
 write.csv(layer, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/Lilooet_layer.csv", row.names = FALSE)
 write.csv(poly, "J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/Lilooet_poly.csv", row.names = FALSE)
