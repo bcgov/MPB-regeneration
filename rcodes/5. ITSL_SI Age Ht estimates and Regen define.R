@@ -48,7 +48,7 @@ for (i in 1:dim(i4na)[1]){
 
 
 unique(yesi$SP)
-[1] "PL" "FD" "SX" "BL"
+#[1] "PL" "FD" "SX" "BL"
 
 ##PL
 
