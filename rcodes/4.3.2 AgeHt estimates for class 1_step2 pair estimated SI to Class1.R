@@ -69,57 +69,40 @@ nosi_nono <- nosi_no[SI %in% NA]
 # 6: 8012U_3PT     3     1 PW   F     4  NA  NA NA      50  IDF     dc    NA NA
 # 7: 8903U_3PT     2     1 BL   Q   118  NA  NA NA      10 ESSF     dv     2 NA
 
-##1909U_3PT Point1 SE
-###Convert 'PL MS 30 SI' and 'BL MS 30 SI' to SE
+##1909U_3PT Point1 SE MS 30
+###Convert PL MS 30 to SE
 
-plsi <- allsi[SP %in% "PL" & BEC %in% "MS" & OVER_CC %in% 30, SI]
-blsi <- allsi[SP %in% "BL" & BEC %in% "MS" & OVER_CC %in% 30, SI]
-# SIndexR_SpecMap("PL")
-# #87
-#
-# SIndexR_SpecMap("SW")
-# #109
-#
-# SIndexR_SIToSI(sp_index1 = 87, site = plsi[1], sp_index2 = 109)
-#$output -4
+plsi <- lookup[SP %in% "PL" & BEC %in% "MS" & OVER_CC %in% 30, SI]
+sesi <- -2.14+1.09*plsi
 
-##Use conversion equation (PL to SW and BL to SW)
+nosi_nono[1]$SI <- round(sesi, digits = 2)
 
-sesi1 <- -2.14+1.09*plsi
-sesi2 <- (blsi-1.68)/0.86
+##4209U_R3 Point1 FD PP 20
 
-sesi <- c(sesi1, sesi2)
-nosi_nono[1]$SI <- round(mean(sesi), digits = 2)
-
-##4209U_R3 Point1 FD
-
-allsi[BEC %in% "PP" & OVER_CC %in% 20]
-##Empty data.table (0 rows and 14 cols): Plot,Point,Class,SP,FHQ,Count...
+lookup[BEC %in% "PP" & OVER_CC %in% 20]
+#Empty data.table (0 rows and 4 cols): SP,BEC,OVER_CC,SI
 ##Use FD SI in PP 30 for this stem
 
 si <- lookup[SP %in% "FD" & BEC %in% "PP" & OVER_CC %in% 30, SI]
 nosi_nono[2]$SI <- si
 
-##4209U_R3 PY
+##4209U_R3 PY PP 20
 
 si <- lookup[SP %in% "PY", SI]
 nosi_nono[3:5]$SI <- si
 
-##8012U_3PT Point3 PW
+##8012U_3PT Point3 PW IDF 50
 
 lookup[BEC %in% "IDF" & OVER_CC %in% 50]
 #    SP BEC OVER_CC   SI
 # 1: BL IDF      50 7.50
 # 2: FD IDF      50 5.09
 
-##Use conversion equation (BL to PL and FD to PL)
-blsi <- allsi[SP %in% "BL" & BEC %in% "IDF" & OVER_CC %in% 50, SI]
-pwsi1 <- (blsi-0.474)/0.917
-fdsi <- allsi[SP %in% "FD" & BEC %in% "IDF" & OVER_CC %in% 50, SI]
-pwsi2 <- -0.758 + 1.07*fdsi
+##Use FD to PL conversion equation
+fdsi <- lookup[SP %in% "FD" & BEC %in% "IDF" & OVER_CC %in% 50, SI]
+pwsi <- -0.758 + 1.07*fdsi
 
-pwsi <- c(pwsi1, pwsi2)
-nosi_nono[6]$SI <- round(mean(pwsi), digits = 2)
+nosi_nono[6]$SI <- round(pwsi, digits = 2)
 
 ##8903U_3PT Point2 BL
 
