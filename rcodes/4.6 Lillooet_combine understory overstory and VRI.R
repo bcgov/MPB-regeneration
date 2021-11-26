@@ -129,6 +129,7 @@ vri2019_poly <- vri2019_poly[Plot %in% p]
 
 vri2019 <- data.table(read.csv("J:/!Workgrp/Inventory/MPB regeneration_WenliGrp/compiled data/Lillooet/overstory_VRI2019.txt"))
 vri2019 <- vri2019[Call_Num %in% p]
+vri2019 <- vri2019[!Layer %in% "D"]
 vri2019_sp1 <- data.table(Plot = vri2019$Call_Num,
                           Layer = 2019,
                           Inv_Standard = vri2019$INVENTORY_STANDARD_CD,
@@ -161,6 +162,10 @@ vri2019_sp3 <- data.table(Plot = vri2019$Call_Num,
 vri2019_sp3 <- vri2019_sp3[!PCT %in% NA]
 vri2019_layer <- rbind(vri2019_sp1, vri2019_sp2, vri2019_sp3, fill = TRUE)
 setorder(vri2019_layer, Plot)
+
+vri2019_layer[SP %in% "PLI", SP := "PL"]
+vri2019_layer[SP %in% "FDI", SP := "FD"]
+
 
 ##combine layers together
 ##Layer: under1, over_layer, vri2003_layer, vri2019_layer
